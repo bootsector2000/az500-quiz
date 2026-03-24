@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchQuestions } from "@/lib/fetchQuestions";
 import { Question } from "@/lib/parseCsv";
 
-function renderRichText(
-  text: string,
-  images: Record<string, string>
-) {
+function renderRichText(text: string, images: Record<string, string>) {
   if (!text) return null;
 
   const parts = text.split(/(<img\d+>|https?:\/\/[^\s]+)/g);
@@ -20,16 +17,11 @@ function renderRichText(
         if (imgMatch) {
           const key = `img${imgMatch[1]}`;
           const src = images[key]?.trim();
-
           if (!src) return null;
 
           return (
             <div key={index} className="my-4">
-              <img
-                src={src}
-                alt={key}
-                className="w-full rounded-lg border"
-              />
+              <img src={src} alt={key} className="w-full rounded-lg border" />
             </div>
           );
         }
@@ -37,12 +29,7 @@ function renderRichText(
         if (part.match(/^https?:\/\//)) {
           return (
             <div key={index} className="mt-3">
-              <a
-                href={part}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline hover:text-blue-800"
-              >
+              <a href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
                 {part}
               </a>
             </div>
@@ -63,6 +50,9 @@ export default function Home() {
   const [score, setScore] = useState(0);
   const [jumpTo, setJumpTo] = useState("");
 
+  const [ordered, setOrdered] = useState<string[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
   useEffect(() => {
     fetchQuestions().then(setQuestions);
   }, []);
@@ -74,9 +64,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-6 rounded-2xl shadow-lg text-center">
           <h2 className="text-2xl font-semibold mb-4">Finished</h2>
-          <p className="text-lg">
-            Score: {score} / {questions.length}
-          </p>
+          <p className="text-lg">Score: {score} / {questions.length}</p>
         </div>
       </div>
     );
@@ -84,6 +72,15 @@ export default function Home() {
 
   const q = questions[index];
   const isMultiple = q.correctAnswers.length > 1;
+  const isNumeric = q.answers.every(a => /^\d+$/.test(a.key));
+
+  const correctOrder = q.correctAnswers
+  .map(x => x.trim())
+  .filter(Boolean);
+const normalizedOrdered = ordered.map(x => x.trim());
+  const isCorrectNumeric =
+    normalizedOrdered.length === correctOrder.length &&
+    normalizedOrdered.every((val, i) => val === correctOrder[i]);
 
   function toggleAnswer(key: string) {
     if (checked) return;
@@ -99,20 +96,55 @@ export default function Home() {
     }
   }
 
-  function checkAnswer() {
-    const correct = q.correctAnswers.sort().join(",");
-    const user = [...selected].sort().join(",");
+  function addToOrder(key: string) {
+    if (ordered.includes(key)) return;
+    setOrdered(prev => [...prev, key]);
+  }
 
-    if (correct === user) {
-      setScore(s => s + 1);
+  function removeFromOrder(key: string) {
+    setOrdered(prev => prev.filter(k => k !== key));
+  }
+
+  function handleDragStart(i: number) {
+    setDragIndex(i);
+  }
+
+  function handleDragOver(i: number) {
+    if (dragIndex === null || dragIndex === i) return;
+
+    const updated = [...ordered];
+    const item = updated[dragIndex];
+
+    updated.splice(dragIndex, 1);
+    updated.splice(i, 0, item);
+
+    setDragIndex(i);
+    setOrdered(updated);
+  }
+
+  function handleDragEnd() {
+    setDragIndex(null);
+  }
+
+  function checkAnswer() {
+    let isCorrectAnswer = false;
+
+    if (isNumeric) {
+      isCorrectAnswer = isCorrectNumeric;
+    } else {
+      const correct = q.correctAnswers.sort().join(",");
+      const user = [...selected].sort().join(",");
+      isCorrectAnswer = correct === user;
     }
 
+    if (isCorrectAnswer) setScore(s => s + 1);
     setChecked(true);
   }
 
   function next() {
     setSelected([]);
     setChecked(false);
+    setOrdered([]);
     setIndex(i => i + 1);
   }
 
@@ -120,78 +152,141 @@ export default function Home() {
     if (index === 0) return;
     setSelected([]);
     setChecked(false);
+    setOrdered([]);
     setIndex(i => i - 1);
   }
 
   function goToQuestion(num: number) {
     if (num < 1 || num > questions.length) return;
-
     setIndex(num - 1);
     setSelected([]);
     setChecked(false);
+    setOrdered([]);
   }
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
-        {/* a) Question */}
+        {/* Question */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-700">
             Question {index + 1} / {questions.length}
           </h2>
-          <div className="mt-2 text-lg text-black space-y-2">
+          <div className="mt-2 text-lg space-y-2">
             {renderRichText(q.question, q.images ?? {})}
           </div>
         </div>
 
-        {/* b) Answers */}
-        <div className="mb-6 space-y-2">
-          {q.answers.map(a => {
-            const isSelected = selected.includes(a.key);
-            const isCorrect = q.correctAnswers.includes(a.key);
+        {/* Answers */}
+        <div className="mb-6">
 
-            let base =
-              "p-3 border rounded-lg cursor-pointer transition";
+          {isNumeric ? (
+            <div className="grid grid-cols-2 gap-4">
 
-            let state = "border-gray-300";
-
-            if (!checked && isSelected) {
-              state = "bg-blue-100 border-blue-400";
-            }
-
-            if (checked) {
-              if (isCorrect) {
-                state = "bg-green-100 border-green-500";
-              } else if (isSelected) {
-                state = "bg-red-100 border-red-500";
-              }
-            }
-
-            return (
-              <div
-                key={a.key}
-                className={`${base} ${state}`}
-                onClick={() => toggleAnswer(a.key)}
-              >
-                <span className="font-semibold text-black">{a.key}.</span>{" "}
-                <span className="text-black">{a.text}</span>
+              {/* LEFT */}
+              <div className="space-y-2">
+                {q.answers.map(a => (
+                  <div
+                    key={a.key}
+                    onClick={() => addToOrder(a.key)}
+                    className="p-3 border rounded-lg cursor-pointer hover:bg-gray-100"
+                  >
+                    <span className="font-semibold">{a.key}.</span> {a.text}
+                  </div>
+                ))}
               </div>
-            );
-          })}
+
+              {/* RIGHT (DropZone) */}
+              <div>
+                <div
+                  className={`space-y-2 border rounded-lg p-3 min-h-[150px] ${
+                    checked
+                      ? isCorrectNumeric
+                        ? "bg-green-100 border-green-500"
+                        : "bg-red-100 border-red-500"
+                      : "bg-gray-50"
+                  }`}
+                >
+                  {ordered.length === 0 && (
+                    <div className="text-gray-400 text-sm">
+                      Click items to add here...
+                    </div>
+                  )}
+
+                  {ordered.map((key, i) => {
+                    const item = q.answers.find(a => a.key === key);
+
+                    return (
+                      <div
+                        key={key}
+                        draggable
+                        onDragStart={() => handleDragStart(i)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          handleDragOver(i);
+                        }}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => removeFromOrder(key)}
+                        className="p-2 border rounded bg-white cursor-move"
+                      >
+                        <span className="font-semibold">{key}.</span> {item?.text}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Correct Order */}
+                {checked && !isCorrectNumeric && (
+                  <div className="mt-3 border rounded-lg p-3 bg-green-50">
+                    <div className="font-semibold mb-2">Correct Order:</div>
+                    {correctOrder.map((key, i) => {
+                      const item = q.answers.find(a => a.key === key);
+                      return (
+                        <div key={i} className="p-2 border rounded bg-green-100 mb-1">
+                          <span className="font-semibold">{key}.</span> {item?.text}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          ) : (
+            q.answers.map(a => {
+              const isSelected = selected.includes(a.key);
+              const isCorrect = q.correctAnswers.includes(a.key);
+
+              let state = "border-gray-300";
+
+              if (!checked && isSelected) state = "bg-blue-100 border-blue-400";
+              if (checked) {
+                if (isCorrect) state = "bg-green-100 border-green-500";
+                else if (isSelected) state = "bg-red-100 border-red-500";
+              }
+
+              return (
+                <div
+                  key={a.key}
+                  className={`p-3 border rounded-lg cursor-pointer ${state}`}
+                  onClick={() => toggleAnswer(a.key)}
+                >
+                  <span className="font-semibold text-black">{a.key}.</span> {a.text}
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* c) Check */}
+        {/* Check */}
         {!checked && (
-          <button
-            onClick={checkAnswer}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-          >
+          <button onClick={checkAnswer} className="w-full bg-blue-600 text-white py-2 rounded-lg">
             Check
           </button>
         )}
 
-        {/* d) Explanation */}
+        {/* Explanation */}
         {checked && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
             <p className="font-semibold mb-2">Explanation</p>
@@ -199,23 +294,14 @@ export default function Home() {
           </div>
         )}
 
-        {/* e) Navigation + Score */}
+        {/* Navigation */}
         {checked && (
           <div className="mt-6 flex flex-col gap-3">
-
-            <div className="flex justify-between items-center gap-2">
-              <button
-                onClick={previous}
-                disabled={index === 0}
-                className="bg-gray-300 text-black px-4 py-2 rounded-lg disabled:opacity-50"
-              >
+            <div className="flex justify-between">
+              <button onClick={previous} disabled={index === 0} className="bg-gray-300 px-4 py-2 rounded-lg">
                 Previous
               </button>
-
-              <button
-                onClick={next}
-                className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
-              >
+              <button onClick={next} className="bg-gray-800 text-white px-4 py-2 rounded-lg">
                 Next
               </button>
             </div>
@@ -228,7 +314,6 @@ export default function Home() {
                 onChange={e => setJumpTo(e.target.value)}
                 className="border p-2 rounded-lg w-full"
               />
-
               <button
                 onClick={() => {
                   goToQuestion(Number(jumpTo));
@@ -240,7 +325,7 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="text-right text-gray-600 font-medium">
+            <div className="text-right text-gray-600">
               Score: {score} / {questions.length}
             </div>
           </div>

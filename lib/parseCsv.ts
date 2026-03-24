@@ -17,14 +17,24 @@ export type Question = {
 function parseAnswers(raw: string): Answer[] {
   if (!raw) return [];
 
-  return raw
-    .split(/\n|\r\n/)
+  const cleaned = raw.replace(/^"|"$/g, "");
+
+  const lines = cleaned
+    .replace(/\\n/g, "\n")
+    .split("\n")
     .map(l => l.trim())
-    .filter(Boolean)
+    .filter(Boolean);
+
+  return lines
     .map(line => {
-      const match = line.match(/^([A-Z])\.\s*(.*)$/);
+      // 👇 NEU: akzeptiert A. oder 1.
+      const match = line.match(/^([A-Z]|\d+)\.\s*(.*)$/);
       if (!match) return null;
-      return { key: match[1], text: match[2] };
+
+      return {
+        key: match[1],   // kann jetzt "A" oder "1" sein
+        text: match[2].trim(),
+      };
     })
     .filter(Boolean) as Answer[];
 }
