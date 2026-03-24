@@ -7,25 +7,33 @@ import { Question } from "@/lib/parseCsv";
 function renderExplanation(text: string) {
   if (!text) return null;
 
-  // Split bei "Reference:" (case-insensitive)
-  const match = text.match(/(.*?)(Reference:\s*)(https?:\/\/\S+)/i);
+  // Regex für alle URLs
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  if (!match) {
-    return <p>{text}</p>;
-  }
-
-  const mainText = match[1].trim();
-  const link = match[3].trim();
+  const parts = text.split(urlRegex);
 
   return (
-    <div>
-      <p>{mainText}</p>
+    <div className="text-black">
+      {parts.map((part, index) => {
+        // Wenn Teil ein Link ist
+        if (part.match(urlRegex)) {
+          return (
+            <div key={index} className="mt-3">
+              <a
+                href={part}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                {part}
+              </a>
+            </div>
+          );
+        }
 
-      <div style={{ marginTop: 10 }}>
-        <a href={link} target="_blank" rel="noopener noreferrer">
-          {link}
-        </a>
-      </div>
+        // Normaler Text
+        return <span key={index}>{part}</span>;
+      })}
     </div>
   );
 }
@@ -45,11 +53,13 @@ export default function Home() {
 
   if (index >= questions.length) {
     return (
-      <div style={{ padding: 20 }}>
-        <h2>Finished</h2>
-        <p>
-          Score: {score} / {questions.length}
-        </p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-6 rounded-2xl shadow-lg text-center">
+          <h2 className="text-2xl font-semibold mb-4">Finished</h2>
+          <p className="text-lg">
+            Score: {score} / {questions.length}
+          </p>
+        </div>
       </div>
     );
   }
@@ -89,76 +99,87 @@ export default function Home() {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: 20 }}>
-      
-      {/* a) Question */}
-      <div style={{ marginBottom: 20 }}>
-        <h2>
-          Question {index + 1} / {questions.length}
-        </h2>
-        <p style={{ fontSize: 18 }}>{q.question}</p>
-      </div>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
+      <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
+        
+        {/* a) Question */}
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-gray-700">
+            Question {index + 1} / {questions.length}
+          </h2>
+          <p className="mt-2 text-lg text-black">{q.question}</p>
+        </div>
 
-      {/* b) Answers */}
-      <div style={{ marginBottom: 20 }}>
-        <ul style={{ listStyle: "none", padding: 0 }}>
+        {/* b) Answers */}
+        <div className="mb-6 space-y-2">
           {q.answers.map(a => {
             const isSelected = selected.includes(a.key);
             const isCorrect = q.correctAnswers.includes(a.key);
 
-            let style: any = {
-              padding: "10px",
-              border: "1px solid #ccc",
-              marginBottom: 8,
-              cursor: "pointer",
-            };
+            let base =
+              "p-3 border rounded-lg cursor-pointer transition";
+
+            let state = "border-gray-300";
 
             if (!checked && isSelected) {
-              style.background = "#ddd";
+              state = "bg-blue-100 border-blue-400";
             }
 
             if (checked) {
-              if (isCorrect) style.background = "lightgreen";
-              else if (isSelected) style.background = "salmon";
+              if (isCorrect) {
+                state = "bg-green-100 border-green-500";
+              } else if (isSelected) {
+                state = "bg-red-100 border-red-500";
+              }
             }
 
             return (
-              <li
+              <div
                 key={a.key}
-                style={style}
+                className={`${base} ${state}`}
                 onClick={() => toggleAnswer(a.key)}
               >
-                <strong>{a.key}.</strong> {a.text}
-              </li>
+                <span className="font-semibold text-black">{a.key}.</span>{" "}
+                <span className="text-black">{a.text}</span>
+              </div>
             );
           })}
-        </ul>
+        </div>
+
+        {/* c) Check */}
+        {!checked && (
+          <button
+            onClick={checkAnswer}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Check
+          </button>
+        )}
+
+        {/* d) Explanation */}
+        {checked && (
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+            <p className="font-semibold mb-2">Explanation</p>
+            {renderExplanation(q.explanation)}
+          </div>
+        )}
+
+        {/* e) Next + Score */}
+        {checked && (
+          <div className="mt-6 flex justify-between items-center">
+            <button
+              onClick={next}
+              className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
+            >
+              Next
+            </button>
+
+            <span className="text-gray-600 font-medium">
+              Score: {score} / {questions.length}
+            </span>
+          </div>
+        )}
       </div>
-
-      {/* c) Check */}
-      {!checked && (
-        <div style={{ marginBottom: 20 }}>
-          <button onClick={checkAnswer}>Check</button>
-        </div>
-      )}
-
-      {/* d) Explanation */}
-      {checked && (
-        <div style={{ marginBottom: 20 }}>
-          <strong>Explanation:</strong>
-          {renderExplanation(q.explanation)}
-        </div>
-      )}
-
-      {/* e) Next + Score */}
-      {checked && (
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <button onClick={next}>Next</button>
-          <span>
-            Score: {score} / {questions.length}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
