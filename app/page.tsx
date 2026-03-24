@@ -4,6 +4,67 @@ import { useEffect, useState } from "react";
 import { fetchQuestions } from "@/lib/fetchQuestions";
 import { Question } from "@/lib/parseCsv";
 
+function renderRichText(
+  text: string,
+  images: Record<string, string>
+) {
+  if (!text) return null;
+
+  const parts = text.split(/(<img\d+>|https?:\/\/[^\s]+)/g);
+  console.log("TEXT:", text);
+  console.log("IMAGES:", images);
+  console.log("PARTS:", parts);
+
+
+  return (
+    <div className="text-black">
+      {parts.map((part, index) => {
+        // 👉 IMAGE
+        const imgMatch = part.trim().match(/<img(\d+)>/i);
+        if (imgMatch) {
+          console.log("IMG MATCH:", part, "->", imgMatch[1]);
+        }
+        if (imgMatch) {
+          const key = `img${imgMatch[1]}`;
+          const src = images[key]?.trim();
+          console.log("IMG KEY:", key, "SRC:", src);
+
+          if (!src) return null;
+
+          return (
+            <div key={index} className="my-4">
+              <img
+                src={src}
+                alt={key}
+                className="w-full rounded-lg border"
+              />
+            </div>
+          );
+        }
+
+        // 👉 LINK
+        if (part.match(/^https?:\/\//)) {
+          return (
+            <div key={index} className="mt-3">
+              <a
+                href={part}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                {part}
+              </a>
+            </div>
+          );
+        }
+
+        // 👉 TEXT
+        return <span key={index}>{part}</span>;
+      })}
+    </div>
+  );
+}
+
 function renderExplanation(text: string) {
   if (!text) return null;
 
@@ -160,7 +221,7 @@ export default function Home() {
         {checked && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
             <p className="font-semibold mb-2">Explanation</p>
-            {renderExplanation(q.explanation)}
+            {renderRichText(q.explanation, q.images ?? {})}
           </div>
         )}
 

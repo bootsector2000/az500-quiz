@@ -11,6 +11,7 @@ export type Question = {
   answers: Answer[];
   correctAnswers: string[];
   explanation: string;
+  images?: Record<string, string>; // 👈 NEU
 };
 
 function parseAnswers(raw: string): Answer[] {
@@ -45,10 +46,21 @@ export function parseCsv(csv: string): Question[] {
 
   return (parsed.data as any[])
     .map(row => {
-      // 👉 Skip Bildfragen
+      // 👉 Skip alte Bildfelder (lassen wir drin)
       if (row["question-images"] || row["explanation-images"]) {
         return null;
       }
+
+      // 👉 Dynamisch alle imgX Felder einsammeln
+      const images: Record<string, string> = {};
+
+        Object.keys(row).forEach(key => {
+        const cleanKey = key.trim();
+
+        if (cleanKey.startsWith("img") && row[key]) {
+            images[cleanKey] = row[key].trim();
+        }
+        });
 
       return {
         id: row["question-id"],
@@ -56,6 +68,7 @@ export function parseCsv(csv: string): Question[] {
         answers: parseAnswers(row["answers"]),
         correctAnswers: parseCorrect(row["correct answers"]),
         explanation: row["explanation"],
+        images, // 👈 NEU
       };
     })
     .filter(Boolean);
