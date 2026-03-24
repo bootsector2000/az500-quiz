@@ -11,23 +11,15 @@ function renderRichText(
   if (!text) return null;
 
   const parts = text.split(/(<img\d+>|https?:\/\/[^\s]+)/g);
-  console.log("TEXT:", text);
-  console.log("IMAGES:", images);
-  console.log("PARTS:", parts);
-
 
   return (
     <div className="text-black">
       {parts.map((part, index) => {
-        // 👉 IMAGE
         const imgMatch = part.trim().match(/<img(\d+)>/i);
-        if (imgMatch) {
-          console.log("IMG MATCH:", part, "->", imgMatch[1]);
-        }
+
         if (imgMatch) {
           const key = `img${imgMatch[1]}`;
           const src = images[key]?.trim();
-          console.log("IMG KEY:", key, "SRC:", src);
 
           if (!src) return null;
 
@@ -42,7 +34,6 @@ function renderRichText(
           );
         }
 
-        // 👉 LINK
         if (part.match(/^https?:\/\//)) {
           return (
             <div key={index} className="mt-3">
@@ -58,41 +49,6 @@ function renderRichText(
           );
         }
 
-        // 👉 TEXT
-        return <span key={index}>{part}</span>;
-      })}
-    </div>
-  );
-}
-
-function renderExplanation(text: string) {
-  if (!text) return null;
-
-  // Regex für alle URLs
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-
-  const parts = text.split(urlRegex);
-
-  return (
-    <div className="text-black">
-      {parts.map((part, index) => {
-        // Wenn Teil ein Link ist
-        if (part.match(urlRegex)) {
-          return (
-            <div key={index} className="mt-3">
-              <a
-                href={part}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline hover:text-blue-800"
-              >
-                {part}
-              </a>
-            </div>
-          );
-        }
-
-        // Normaler Text
         return <span key={index}>{part}</span>;
       })}
     </div>
@@ -105,6 +61,7 @@ export default function Home() {
   const [selected, setSelected] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
   const [score, setScore] = useState(0);
+  const [jumpTo, setJumpTo] = useState("");
 
   useEffect(() => {
     fetchQuestions().then(setQuestions);
@@ -159,16 +116,33 @@ export default function Home() {
     setIndex(i => i + 1);
   }
 
+  function previous() {
+    if (index === 0) return;
+    setSelected([]);
+    setChecked(false);
+    setIndex(i => i - 1);
+  }
+
+  function goToQuestion(num: number) {
+    if (num < 1 || num > questions.length) return;
+
+    setIndex(num - 1);
+    setSelected([]);
+    setChecked(false);
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
-        
+
         {/* a) Question */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-700">
             Question {index + 1} / {questions.length}
           </h2>
-          <p className="mt-2 text-lg text-black">{q.question}</p>
+          <div className="mt-2 text-lg text-black space-y-2">
+            {renderRichText(q.question, q.images ?? {})}
+          </div>
         </div>
 
         {/* b) Answers */}
@@ -225,19 +199,50 @@ export default function Home() {
           </div>
         )}
 
-        {/* e) Next + Score */}
+        {/* e) Navigation + Score */}
         {checked && (
-          <div className="mt-6 flex justify-between items-center">
-            <button
-              onClick={next}
-              className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
-            >
-              Next
-            </button>
+          <div className="mt-6 flex flex-col gap-3">
 
-            <span className="text-gray-600 font-medium">
+            <div className="flex justify-between items-center gap-2">
+              <button
+                onClick={previous}
+                disabled={index === 0}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              <button
+                onClick={next}
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900"
+              >
+                Next
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Go to question..."
+                value={jumpTo}
+                onChange={e => setJumpTo(e.target.value)}
+                className="border p-2 rounded-lg w-full"
+              />
+
+              <button
+                onClick={() => {
+                  goToQuestion(Number(jumpTo));
+                  setJumpTo("");
+                }}
+                className="bg-blue-600 text-white px-4 rounded-lg"
+              >
+                Go
+              </button>
+            </div>
+
+            <div className="text-right text-gray-600 font-medium">
               Score: {score} / {questions.length}
-            </span>
+            </div>
           </div>
         )}
       </div>
