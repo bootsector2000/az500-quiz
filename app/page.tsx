@@ -53,6 +53,9 @@ export default function Home() {
   const [ordered, setOrdered] = useState<string[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
+  // 👉 NEW: Yes/No State
+  const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, string>>({});
+
   useEffect(() => {
     fetchQuestions().then(setQuestions);
   }, []);
@@ -74,10 +77,12 @@ export default function Home() {
   const isMultiple = q.correctAnswers.length > 1;
   const isNumeric = q.answers.every(a => /^\d+$/.test(a.key));
 
-  const correctOrder = q.correctAnswers
-  .map(x => x.trim())
-  .filter(Boolean);
-const normalizedOrdered = ordered.map(x => x.trim());
+  // 👉 NEW: Yes/No detection
+  const isYesNo = q.answers.every(a => a.text.includes("<radio YN>"));
+
+  const correctOrder = q.correctAnswers.map(x => x.trim()).filter(Boolean);
+  const normalizedOrdered = ordered.map(x => x.trim());
+
   const isCorrectNumeric =
     normalizedOrdered.length === correctOrder.length &&
     normalizedOrdered.every((val, i) => val === correctOrder[i]);
@@ -94,6 +99,15 @@ const normalizedOrdered = ordered.map(x => x.trim());
     } else {
       setSelected([key]);
     }
+  }
+
+  function setYesNo(key: string, value: "Yes" | "No") {
+    if (checked) return;
+
+    setYesNoAnswers(prev => ({
+      ...prev,
+      [key]: value
+    }));
   }
 
   function addToOrder(key: string) {
@@ -129,7 +143,15 @@ const normalizedOrdered = ordered.map(x => x.trim());
   function checkAnswer() {
     let isCorrectAnswer = false;
 
-    if (isNumeric) {
+    if (isYesNo) {
+      isCorrectAnswer = q.correctAnswers.every(entry => {
+const parts = entry.trim().split(/\s+/);
+const key = parts[0];
+const value = parts[1];
+
+return yesNoAnswers[key]?.trim() === value?.trim();
+      });
+    } else if (isNumeric) {
       isCorrectAnswer = isCorrectNumeric;
     } else {
       const correct = q.correctAnswers.sort().join(",");
@@ -145,6 +167,7 @@ const normalizedOrdered = ordered.map(x => x.trim());
     setSelected([]);
     setChecked(false);
     setOrdered([]);
+    setYesNoAnswers({});
     setIndex(i => i + 1);
   }
 
@@ -153,6 +176,7 @@ const normalizedOrdered = ordered.map(x => x.trim());
     setSelected([]);
     setChecked(false);
     setOrdered([]);
+    setYesNoAnswers({});
     setIndex(i => i - 1);
   }
 
@@ -162,6 +186,7 @@ const normalizedOrdered = ordered.map(x => x.trim());
     setSelected([]);
     setChecked(false);
     setOrdered([]);
+    setYesNoAnswers({});
   }
 
   return (
@@ -181,79 +206,105 @@ const normalizedOrdered = ordered.map(x => x.trim());
         {/* Answers */}
         <div className="mb-6">
 
-          {isNumeric ? (
-            <div className="grid grid-cols-2 gap-4">
+          {/* 👉 YES / NO */}
+          {isYesNo ? (
+            <div className="space-y-3">
+              {q.answers.map(a => {
+                const selected = yesNoAnswers[a.key];
+                const correctEntry = q.correctAnswers.find(c => c.startsWith(a.key));
+                const correctValue = correctEntry?.split(" ")[1];
 
-              {/* LEFT */}
+                let bg = "";
+                if (checked) {
+                  bg = selected === correctValue ? "bg-green-100" : "bg-red-100";
+                }
+
+                return (
+                  <div key={a.key} className={`p-3 border rounded-lg ${bg}`}>
+                    <div className="flex justify-between items-center">
+
+                      <span>{a.key}.</span>
+
+                      <div className="flex gap-4">
+                        <label>
+                          <input
+                            type="radio"
+                            name={a.key}
+                            checked={selected === "Yes"}
+                            onChange={() => setYesNo(a.key, "Yes")}
+                          /> Yes
+                        </label>
+
+                        <label>
+                          <input
+                            type="radio"
+                            name={a.key}
+                            checked={selected === "No"}
+                            onChange={() => setYesNo(a.key, "No")}
+                          /> No
+                        </label>
+                      </div>
+
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : isNumeric ? (
+            // 👉 DEIN BESTEHENDER NUMERIC BLOCK (UNVERÄNDERT)
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 {q.answers.map(a => (
-                  <div
-                    key={a.key}
-                    onClick={() => addToOrder(a.key)}
-                    className="p-3 border rounded-lg cursor-pointer hover:bg-gray-100"
-                  >
+                  <div key={a.key} onClick={() => addToOrder(a.key)} className="p-3 border rounded-lg cursor-pointer hover:bg-gray-100">
                     <span className="font-semibold">{a.key}.</span> {a.text}
                   </div>
                 ))}
               </div>
 
-              {/* RIGHT (DropZone) */}
               <div>
-                <div
-                  className={`space-y-2 border rounded-lg p-3 min-h-[150px] ${
-                    checked
-                      ? isCorrectNumeric
-                        ? "bg-green-100 border-green-500"
-                        : "bg-red-100 border-red-500"
-                      : "bg-gray-50"
-                  }`}
-                >
-                  {ordered.length === 0 && (
-                    <div className="text-gray-400 text-sm">
-                      Click items to add here...
-                    </div>
-                  )}
+                <div className={`space-y-2 border rounded-lg p-3 min-h-[150px] ${
+                  checked
+                    ? isCorrectNumeric
+                      ? "bg-green-100 border-green-500"
+                      : "bg-red-100 border-red-500"
+                    : "bg-gray-50"
+                }`}>
+{/* Correct Order */}
+{checked && !isCorrectNumeric && (
+  <div className="mt-3 border rounded-lg p-3 bg-green-50">
+    <div className="font-semibold mb-2">Correct Order:</div>
+
+    {correctOrder.map((key, i) => {
+      const item = q.answers.find(a => a.key === key);
+
+      return (
+        <div key={i} className="p-2 border rounded bg-green-100 mb-1">
+          <span className="font-semibold">{key}.</span> {item?.text}
+        </div>
+      );
+    })}
+  </div>
+)}
+
 
                   {ordered.map((key, i) => {
                     const item = q.answers.find(a => a.key === key);
 
                     return (
-                      <div
-                        key={key}
-                        draggable
-                        onDragStart={() => handleDragStart(i)}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          handleDragOver(i);
-                        }}
+                      <div key={key} draggable onDragStart={() => handleDragStart(i)}
+                        onDragOver={(e) => { e.preventDefault(); handleDragOver(i); }}
                         onDragEnd={handleDragEnd}
                         onClick={() => removeFromOrder(key)}
-                        className="p-2 border rounded bg-white cursor-move"
-                      >
+                        className="p-2 border rounded bg-white cursor-move">
                         <span className="font-semibold">{key}.</span> {item?.text}
                       </div>
                     );
                   })}
                 </div>
-
-                {/* Correct Order */}
-                {checked && !isCorrectNumeric && (
-                  <div className="mt-3 border rounded-lg p-3 bg-green-50">
-                    <div className="font-semibold mb-2">Correct Order:</div>
-                    {correctOrder.map((key, i) => {
-                      const item = q.answers.find(a => a.key === key);
-                      return (
-                        <div key={i} className="p-2 border rounded bg-green-100 mb-1">
-                          <span className="font-semibold">{key}.</span> {item?.text}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
-
             </div>
           ) : (
+            // 👉 MC bleibt gleich
             q.answers.map(a => {
               const isSelected = selected.includes(a.key);
               const isCorrect = q.correctAnswers.includes(a.key);
@@ -267,11 +318,7 @@ const normalizedOrdered = ordered.map(x => x.trim());
               }
 
               return (
-                <div
-                  key={a.key}
-                  className={`p-3 border rounded-lg cursor-pointer ${state}`}
-                  onClick={() => toggleAnswer(a.key)}
-                >
+                <div key={a.key} className={`p-3 border rounded-lg cursor-pointer ${state}`} onClick={() => toggleAnswer(a.key)}>
                   <span className="font-semibold text-black">{a.key}.</span> {a.text}
                 </div>
               );
@@ -279,57 +326,67 @@ const normalizedOrdered = ordered.map(x => x.trim());
           )}
         </div>
 
-        {/* Check */}
         {!checked && (
           <button onClick={checkAnswer} className="w-full bg-blue-600 text-white py-2 rounded-lg">
             Check
           </button>
         )}
 
-        {/* Explanation */}
         {checked && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
             <p className="font-semibold mb-2">Explanation</p>
             {renderRichText(q.explanation, q.images ?? {})}
           </div>
         )}
+{/* Navigation */}
+{checked && (
+  <div className="mt-6 flex flex-col gap-3">
 
-        {/* Navigation */}
-        {checked && (
-          <div className="mt-6 flex flex-col gap-3">
-            <div className="flex justify-between">
-              <button onClick={previous} disabled={index === 0} className="bg-gray-300 px-4 py-2 rounded-lg">
-                Previous
-              </button>
-              <button onClick={next} className="bg-gray-800 text-white px-4 py-2 rounded-lg">
-                Next
-              </button>
-            </div>
+    <div className="flex justify-between">
+      <button
+        onClick={previous}
+        disabled={index === 0}
+        className="bg-gray-300 px-4 py-2 rounded-lg"
+      >
+        Previous
+      </button>
 
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Go to question..."
-                value={jumpTo}
-                onChange={e => setJumpTo(e.target.value)}
-                className="border p-2 rounded-lg w-full"
-              />
-              <button
-                onClick={() => {
-                  goToQuestion(Number(jumpTo));
-                  setJumpTo("");
-                }}
-                className="bg-blue-600 text-white px-4 rounded-lg"
-              >
-                Go
-              </button>
-            </div>
+      <button
+        onClick={next}
+        className="bg-gray-800 text-white px-4 py-2 rounded-lg"
+      >
+        Next
+      </button>
+    </div>
 
-            <div className="text-right text-gray-600">
-              Score: {score} / {questions.length}
-            </div>
-          </div>
-        )}
+    <div className="flex gap-2">
+      <input
+        type="number"
+        placeholder="Go to question..."
+        value={jumpTo}
+        onChange={e => setJumpTo(e.target.value)}
+        className="border p-2 rounded-lg w-full"
+      />
+
+      <button
+        onClick={() => {
+          goToQuestion(Number(jumpTo));
+          setJumpTo("");
+        }}
+        className="bg-blue-600 text-white px-4 rounded-lg"
+      >
+        Go
+      </button>
+    </div>
+
+    <div className="text-right text-gray-600">
+      Score: {score} / {questions.length}
+    </div>
+
+  </div>
+)}
+
+
       </div>
     </div>
   );
