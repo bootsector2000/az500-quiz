@@ -8,7 +8,11 @@ import AnswerRenderer from "@/components/answers/AnswerRenderer";
 import { useQuiz } from "@/context/QuizContext";
 import { saveState } from "@/lib/storage";
 
-export default function Quiz() {
+type Props = {
+initialState?: any;
+};
+
+export default function Quiz({ initialState }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
 
@@ -18,15 +22,32 @@ export default function Quiz() {
   const [multiAnswers, setMultiAnswers] = useState<Record<string, string>>({});
   const [jumpTo, setJumpTo] = useState("");
 
-  const { score, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
+  const { score, setScore, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
 
   useEffect(() => {
     fetchQuestions().then(setQuestions);
   }, []);
 
+useEffect(() => {
+  if (!initialState) return;
+
+  setIndex(initialState.index || 0);
+  setSelected(initialState.selected || []);
+  setOrdered(initialState.ordered || []);
+  setYesNoAnswers(initialState.yesNoAnswers || {});
+  setMultiAnswers(initialState.multiAnswers || {});
+
+  // 🔥 DAS IST DER FIX
+  setScore(initialState.score || 0);
+
+}, [initialState]);
+
   if (!questions.length) return <div>Loading...</div>;
 
   const q = questions[index];
+
+
+
 
   /* ---------------- RESET ---------------- */
 

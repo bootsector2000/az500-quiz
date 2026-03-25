@@ -3,31 +3,40 @@
 import { useState, useEffect } from "react";
 import Menu from "@/components/Menu";
 import Quiz from "@/components/Quiz";
-import { loadState } from "@/lib/storage";
+import { loadAllStates, SavedState } from "@/lib/storage";
 import { QuizProvider } from "@/context/QuizContext";
 
 export default function Home() {
   const [mode, setMode] = useState<"menu" | "quiz">("menu");
-  const [saved, setSaved] = useState<any>(null);
+  const [saves, setSaves] = useState<SavedState[]>([]);
+  const [activeSave, setActiveSave] = useState<SavedState | null>(null);
 
   useEffect(() => {
-    const s = loadState();
-    if (s) setSaved(s);
+    setSaves(loadAllStates());
   }, []);
 
   if (mode === "menu") {
     return (
       <Menu
-        hasSave={!!saved}
-        onNew={() => setMode("quiz")}
-        onResume={() => setMode("quiz")}
-      />
+  saves={saves}
+  onNew={() => {
+    setActiveSave(null);
+    setMode("quiz");
+  }}
+  onLoad={(s) => {
+    setActiveSave(s);
+    setMode("quiz");
+  }}
+  onDelete={() => {
+    setSaves(loadAllStates());
+  }}
+/>
     );
   }
 
   return (
     <QuizProvider>
-      <Quiz />
+      <Quiz initialState={activeSave} />
     </QuizProvider>
   );
 }

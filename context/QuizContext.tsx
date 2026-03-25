@@ -9,6 +9,7 @@ type QuizContextType = {
   setChecked: (v: boolean) => void;
   registerResult: (isCorrect: boolean) => void;
   resetAnswerLock: () => void;
+  setScore: (v: number) => void;
 };
 
 const QuizContext = createContext<QuizContextType | null>(null);
@@ -38,13 +39,14 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <QuizContext.Provider
-      value={{
-        score,
-        checked,
-        setChecked,
-        registerResult,
-        resetAnswerLock,
-      }}
+    value={{
+    score,
+    setScore,
+    checked,
+    setChecked,
+    registerResult,
+    resetAnswerLock,
+    }}
     >
       {children}
     </QuizContext.Provider>
