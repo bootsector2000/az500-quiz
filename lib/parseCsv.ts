@@ -5,7 +5,12 @@ type Answer = {
   text: string;
 };
 
-export type QuestionType = "mc" | "drag" | "yesno";
+type MultiBox = {
+  id: string;
+  answers: Answer[];
+};
+
+export type QuestionType = "mc" | "drag" | "yesno" | "multibox";
 
 export type Question = {
   id: string;
@@ -15,7 +20,67 @@ export type Question = {
   explanation: string;
   type: QuestionType;
   images: Record<string, string>;
+
+  multiBoxes?: MultiBox[];
+  multiCorrect?: Record<string, string>;
 };
+
+/* ---------------- MULTIBOX ---------------- */
+
+function parseMultiBoxAnswers(raw: string): MultiBox[] {
+  if (!raw) return [];
+
+  const lines = raw
+    .replace(/\\n/g, "\n")
+    .split("\n")
+    .map(l => l.trim());
+
+  const boxes: MultiBox[] = [];
+  let currentBox: MultiBox | null = null;
+
+  for (const line of lines) {
+    if (!line) continue;
+
+    const boxMatch = line.match(/^B(\d+):/i);
+    if (boxMatch) {
+      currentBox = {
+        id: `b${boxMatch[1]}`,
+        answers: [],
+      };
+      boxes.push(currentBox);
+      continue;
+    }
+
+    if (currentBox) {
+      const match = line.match(/^([a-z])\.\s*(.*)$/i);
+      if (match) {
+        currentBox.answers.push({
+          key: match[1].toLowerCase(),
+          text: match[2],
+        });
+      }
+    }
+  }
+
+  return boxes;
+}
+
+function parseMultiBoxCorrect(raw: string): Record<string, string> {
+  const map: Record<string, string> = {};
+
+  if (!raw) return map;
+
+  raw.split(/\s+/).forEach(part => {
+    const [box, val] = part.split(":");
+    if (box && val) {
+      map[box.toLowerCase()] = val.toLowerCase();
+    }
+  });
+
+  return map;
+}
+
+/* ---------------- NORMAL ---------------- */
 
 function parseAnswers(raw: string): Answer[] {
   if (!raw) return [];
@@ -50,6 +115,8 @@ function parseCorrect(raw: string): string[] {
     .filter(Boolean);
 }
 
+/* ---------------- MAIN ---------------- */
+
 export function parseCsv(csv: string): Question[] {
   const parsed = Papa.parse(csv, {
     header: true,
@@ -57,7 +124,7 @@ export function parseCsv(csv: string): Question[] {
   });
 
   return (parsed.data as any[])
-    .map(row => {
+    .map((row): Question | null => {
       if (row["question-images"] || row["explanation-images"]) {
         return null;
       }
@@ -70,6 +137,23 @@ export function parseCsv(csv: string): Question[] {
           images[cleanKey] = row[key].trim();
         }
       });
+
+      const multiBoxes = parseMultiBoxAnswers(row["answers"]);
+
+      // 🔥 WICHTIG: MultiBox zuerst!
+      if (multiBoxes.length > 0) {
+        return {
+          id: row["question-id"],
+          question: row["question"],
+          answers: [],
+          correctAnswers: [],
+          explanation: row["explanation"],
+          type: "multibox" as QuestionType,
+          images,
+          multiBoxes,
+          multiCorrect: parseMultiBoxCorrect(row["correct answers"]),
+        };
+      }
 
       const answers = parseAnswers(row["answers"]);
       const correctAnswers = parseCorrect(row["correct answers"]);
