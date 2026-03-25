@@ -5,14 +5,16 @@ import { fetchQuestions } from "@/lib/fetchQuestions";
 import { Question } from "@/lib/parseCsv";
 import { renderRichText } from "@/lib/renderRichText";
 import AnswerRenderer from "@/components/answers/AnswerRenderer";
+import { QuizProvider, useQuiz } from "@/context/QuizContext";
 
-export default function Home() {
+/* 👉 INNER COMPONENT (hat Zugriff auf Context) */
+function QuizApp() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
-  const [checked, setChecked] = useState(false);
-  const [score, setScore] = useState(0);
   const [jumpTo, setJumpTo] = useState("");
+
+  const { score, checked, setChecked, registerResult } = useQuiz();
 
   const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, string>>({});
 
@@ -73,16 +75,14 @@ export default function Home() {
         return yesNoAnswers[entry.key] === entry.value;
       });
     } else if (q.type === "drag") {
-      // 👉 kommt später über zentralen State
-      isCorrectAnswer = false;
+      isCorrectAnswer = false; // kommt gleich sauber über Context
     } else {
       const correct = q.correctAnswers.sort().join(",");
       const user = [...selected].sort().join(",");
       isCorrectAnswer = correct === user;
     }
 
-    if (isCorrectAnswer) setScore(s => s + 1);
-    setChecked(true);
+    registerResult(isCorrectAnswer);
   }
 
   function next() {
@@ -114,7 +114,6 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
-        {/* Question */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-700">
             Question {index + 1} / {questions.length}
@@ -125,7 +124,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Answers */}
         <div className="mb-6">
           <AnswerRenderer
             q={q}
@@ -137,7 +135,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Check Button */}
         {!checked && (
           <button
             onClick={checkAnswer}
@@ -147,7 +144,6 @@ export default function Home() {
           </button>
         )}
 
-        {/* Explanation */}
         {checked && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
             <p className="font-semibold mb-2">Explanation</p>
@@ -155,7 +151,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Navigation */}
         {checked && (
           <div className="mt-6 flex flex-col gap-3">
 
@@ -205,5 +200,14 @@ export default function Home() {
 
       </div>
     </div>
+  );
+}
+
+/* 👉 OUTER COMPONENT (stellt Context bereit) */
+export default function Home() {
+  return (
+    <QuizProvider>
+      <QuizApp />
+    </QuizProvider>
   );
 }
