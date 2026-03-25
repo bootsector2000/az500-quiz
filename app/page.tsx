@@ -3,44 +3,8 @@
 import { useEffect, useState } from "react";
 import { fetchQuestions } from "@/lib/fetchQuestions";
 import { Question } from "@/lib/parseCsv";
-
-function renderRichText(text: string, images: Record<string, string>) {
-  if (!text) return null;
-
-  const parts = text.split(/(<img\d+>|https?:\/\/[^\s]+)/g);
-
-  return (
-    <div className="text-black">
-      {parts.map((part, index) => {
-        const imgMatch = part.trim().match(/<img(\d+)>/i);
-
-        if (imgMatch) {
-          const key = `img${imgMatch[1]}`;
-          const src = images[key]?.trim();
-          if (!src) return null;
-
-          return (
-            <div key={index} className="my-4">
-              <img src={src} alt={key} className="w-full rounded-lg border" />
-            </div>
-          );
-        }
-
-        if (part.match(/^https?:\/\//)) {
-          return (
-            <div key={index} className="mt-3">
-              <a href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                {part}
-              </a>
-            </div>
-          );
-        }
-
-        return <span key={index}>{part}</span>;
-      })}
-    </div>
-  );
-}
+import { renderRichText } from "@/lib/renderRichText";
+import AnswerRenderer from "@/components/answers/AnswerRenderer";
 
 export default function Home() {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -78,8 +42,14 @@ export default function Home() {
   const isNumeric = q.answers.every(a => /^\d+$/.test(a.key));
 
   // 👉 NEW: Yes/No detection
+
+type YesNoPair = {
+  key: string;
+  value: string;
+};
+
   const isYesNo = q.answers.every(a => a.text.includes("<radio YN>"));
-  const parsedYesNo = [];
+  const parsedYesNo: YesNoPair[] = [];
 
   for (let i = 0; i < q.correctAnswers.length; i += 2) {
     const key = String(q.correctAnswers[i]).trim();
@@ -313,25 +283,14 @@ export default function Home() {
             </div>
           ) : (
             // 👉 MC bleibt gleich
-            q.answers.map(a => {
-              const isSelected = selected.includes(a.key);
-              const isCorrect = q.correctAnswers.includes(a.key);
-
-              let state = "border-gray-300";
-
-              if (!checked && isSelected) state = "bg-blue-100 border-blue-400";
-              if (checked) {
-                if (isCorrect) state = "bg-green-100 border-green-500";
-                else if (isSelected) state = "bg-red-100 border-red-500";
-              }
-
-              return (
-                <div key={a.key} className={`p-3 border rounded-lg cursor-pointer ${state}`} onClick={() => toggleAnswer(a.key)}>
-                  <span className="font-semibold text-black">{a.key}.</span>{" "}
-                  {renderRichText(a.text, q.images ?? {})}
-                </div>
-              );
-            })
+<AnswerRenderer
+  q={q}
+  selected={selected}
+  toggleAnswer={toggleAnswer}
+  checked={checked}
+  yesNoAnswers={yesNoAnswers}
+  setYesNo={setYesNo}
+/>
           )}
         </div>
 
