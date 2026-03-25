@@ -5,13 +5,16 @@ type Answer = {
   text: string;
 };
 
+export type QuestionType = "mc" | "drag" | "yesno";
+
 export type Question = {
   id: string;
   question: string;
   answers: Answer[];
   correctAnswers: string[];
   explanation: string;
-  images?: Record<string, string>; // 👈 NEU
+  type: QuestionType;
+  images: Record<string, string>;
 };
 
 function parseAnswers(raw: string): Answer[] {
@@ -27,12 +30,11 @@ function parseAnswers(raw: string): Answer[] {
 
   return lines
     .map(line => {
-      // 👇 NEU: akzeptiert A. oder 1.
       const match = line.match(/^([A-Z]|\d+)\.\s*(.*)$/);
       if (!match) return null;
 
       return {
-        key: match[1],   // kann jetzt "A" oder "1" sein
+        key: match[1],
         text: match[2].trim(),
       };
     })
@@ -56,30 +58,39 @@ export function parseCsv(csv: string): Question[] {
 
   return (parsed.data as any[])
     .map(row => {
-      // 👉 Skip alte Bildfelder (lassen wir drin)
       if (row["question-images"] || row["explanation-images"]) {
         return null;
       }
 
-      // 👉 Dynamisch alle imgX Felder einsammeln
       const images: Record<string, string> = {};
 
-        Object.keys(row).forEach(key => {
+      Object.keys(row).forEach(key => {
         const cleanKey = key.trim();
-
         if (cleanKey.startsWith("img") && row[key]) {
-            images[cleanKey] = row[key].trim();
+          images[cleanKey] = row[key].trim();
         }
-        });
+      });
+
+      const answers = parseAnswers(row["answers"]);
+      const correctAnswers = parseCorrect(row["correct answers"]);
+
+      let type: QuestionType = "mc";
+
+      if (answers.length > 0 && answers[0].text.includes("<radio YN>")) {
+        type = "yesno";
+      } else if (answers.every(a => /^\d+$/.test(a.key))) {
+        type = "drag";
+      }
 
       return {
         id: row["question-id"],
         question: row["question"],
-        answers: parseAnswers(row["answers"]),
-        correctAnswers: parseCorrect(row["correct answers"]),
+        answers,
+        correctAnswers,
         explanation: row["explanation"],
-        images, // 👈 NEU
+        type,
+        images,
       };
     })
-    .filter(Boolean);
+    .filter((q): q is Question => q !== null);
 }

@@ -1,6 +1,7 @@
 import { Question } from "@/lib/parseCsv";
 import MultipleChoice from "./MultipleChoice";
 import YesNo from "./YesNo";
+import DragDrop from "./DragDrop";
 
 type Props = {
   q: Question;
@@ -15,13 +16,21 @@ type Props = {
 export default function AnswerRenderer(props: Props) {
   const { q } = props;
 
-  const isYesNo = q.answers.every(a =>
-    a.text.includes("<radio YN>")
-  );
+  switch (q.type) {
+    case "yesno":
+      return <YesNo {...props} />;
 
-  if (isYesNo) {
-    return <YesNo {...props} />;
+    case "drag":
+      return (
+        <DragDrop
+          q={q}
+          checked={props.checked}
+          correctAnswers={q.correctAnswers}
+          onCorrect={() => {}}
+        />
+      );
+
+    default:
+      return <MultipleChoice {...props} />;
   }
-
-  return <MultipleChoice {...props} />;
 }
