@@ -79,7 +79,14 @@ export default function Home() {
 
   // 👉 NEW: Yes/No detection
   const isYesNo = q.answers.every(a => a.text.includes("<radio YN>"));
+  const parsedYesNo = [];
 
+  for (let i = 0; i < q.correctAnswers.length; i += 2) {
+    const key = String(q.correctAnswers[i]).trim();
+    const value = String(q.correctAnswers[i + 1]).trim();
+
+    parsedYesNo.push({ key, value });
+  }
   const correctOrder = q.correctAnswers.map(x => x.trim()).filter(Boolean);
   const normalizedOrdered = ordered.map(x => x.trim());
 
@@ -144,12 +151,11 @@ export default function Home() {
     let isCorrectAnswer = false;
 
     if (isYesNo) {
-      isCorrectAnswer = q.correctAnswers.every(entry => {
-const parts = entry.trim().split(/\s+/);
-const key = parts[0];
-const value = parts[1];
-
-return yesNoAnswers[key]?.trim() === value?.trim();
+      console.log("=== YES/NO DEBUG ===");
+      console.log("parsedYesNo:", parsedYesNo);
+      console.log("user answers:", yesNoAnswers);
+      isCorrectAnswer = parsedYesNo.every(entry => {
+        return String(yesNoAnswers[entry.key]).trim() === entry.value;
       });
     } else if (isNumeric) {
       isCorrectAnswer = isCorrectNumeric;
@@ -211,8 +217,8 @@ return yesNoAnswers[key]?.trim() === value?.trim();
             <div className="space-y-3">
               {q.answers.map(a => {
                 const selected = yesNoAnswers[a.key];
-                const correctEntry = q.correctAnswers.find(c => c.startsWith(a.key));
-                const correctValue = correctEntry?.split(" ")[1];
+                const match = parsedYesNo.find(x => x.key === String(a.key).trim());
+                const correctValue = match?.value;
 
                 let bg = "";
                 if (checked) {
@@ -256,7 +262,8 @@ return yesNoAnswers[key]?.trim() === value?.trim();
               <div className="space-y-2">
                 {q.answers.map(a => (
                   <div key={a.key} onClick={() => addToOrder(a.key)} className="p-3 border rounded-lg cursor-pointer hover:bg-gray-100">
-                    <span className="font-semibold">{a.key}.</span> {a.text}
+                  <span className="font-semibold">{a.key}.</span>{" "}
+                  {renderRichText(a.text, q.images ?? {})}
                   </div>
                 ))}
               </div>
@@ -279,13 +286,13 @@ return yesNoAnswers[key]?.trim() === value?.trim();
 
       return (
         <div key={i} className="p-2 border rounded bg-green-100 mb-1">
-          <span className="font-semibold">{key}.</span> {item?.text}
+          <span className="font-semibold">{key}.</span>{" "}
+          {renderRichText(item?.text || "", q.images ?? {})}
         </div>
       );
     })}
   </div>
 )}
-
 
                   {ordered.map((key, i) => {
                     const item = q.answers.find(a => a.key === key);
@@ -296,7 +303,8 @@ return yesNoAnswers[key]?.trim() === value?.trim();
                         onDragEnd={handleDragEnd}
                         onClick={() => removeFromOrder(key)}
                         className="p-2 border rounded bg-white cursor-move">
-                        <span className="font-semibold">{key}.</span> {item?.text}
+                        <span className="font-semibold">{key}.</span>{" "}
+                        {renderRichText(item?.text || "", q.images ?? {})}
                       </div>
                     );
                   })}
@@ -319,7 +327,8 @@ return yesNoAnswers[key]?.trim() === value?.trim();
 
               return (
                 <div key={a.key} className={`p-3 border rounded-lg cursor-pointer ${state}`} onClick={() => toggleAnswer(a.key)}>
-                  <span className="font-semibold text-black">{a.key}.</span> {a.text}
+                  <span className="font-semibold text-black">{a.key}.</span>{" "}
+                  {renderRichText(a.text, q.images ?? {})}
                 </div>
               );
             })
