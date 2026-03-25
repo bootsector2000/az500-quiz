@@ -1,3 +1,5 @@
+"use client";
+
 import { Question } from "@/lib/parseCsv";
 import { renderRichText } from "@/lib/renderRichText";
 import { useState } from "react";
@@ -5,20 +7,19 @@ import { useState } from "react";
 type Props = {
   q: Question;
   checked: boolean;
-  correctAnswers: string[];
-  onCorrect: () => void;
+  ordered: string[];
+  setOrdered: React.Dispatch<React.SetStateAction<string[]>>;
 };
 
 export default function DragDrop({
   q,
   checked,
-  correctAnswers,
-  onCorrect,
+  ordered,
+  setOrdered,
 }: Props) {
-  const [ordered, setOrdered] = useState<string[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  const correctOrder = correctAnswers.map(x => x.trim());
+  const correctOrder = q.correctAnswers.map(x => x.trim());
   const normalizedOrdered = ordered.map(x => x.trim());
 
   const isCorrect =
@@ -121,6 +122,7 @@ export default function DragDrop({
           </div>
         )}
       </div>
+
     </div>
   );
 }

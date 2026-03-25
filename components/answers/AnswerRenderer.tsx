@@ -11,6 +11,10 @@ type Props = {
 
   yesNoAnswers: Record<string, string>;
   setYesNo: (key: string, value: "Yes" | "No") => void;
+
+  // 👉 NEU
+  ordered: string[];
+  setOrdered: React.Dispatch<React.SetStateAction<string[]>>;
 };
 
 export default function AnswerRenderer(props: Props) {
@@ -25,8 +29,8 @@ export default function AnswerRenderer(props: Props) {
         <DragDrop
           q={q}
           checked={props.checked}
-          correctAnswers={q.correctAnswers}
-          onCorrect={() => {}}
+          ordered={props.ordered}
+          setOrdered={props.setOrdered}
         />
       );
 

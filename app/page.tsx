@@ -7,16 +7,15 @@ import { renderRichText } from "@/lib/renderRichText";
 import AnswerRenderer from "@/components/answers/AnswerRenderer";
 import { QuizProvider, useQuiz } from "@/context/QuizContext";
 
-/* 👉 INNER COMPONENT (hat Zugriff auf Context) */
 function QuizApp() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
+  const [ordered, setOrdered] = useState<string[]>([]);
   const [jumpTo, setJumpTo] = useState("");
-
-  const { score, checked, setChecked, registerResult } = useQuiz();
-
   const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, string>>({});
+
+  const { score, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
 
   useEffect(() => {
     fetchQuestions().then(setQuestions);
@@ -74,8 +73,15 @@ function QuizApp() {
       isCorrectAnswer = parsed.every(entry => {
         return yesNoAnswers[entry.key] === entry.value;
       });
+
     } else if (q.type === "drag") {
-      isCorrectAnswer = false; // kommt gleich sauber über Context
+      const correctOrder = q.correctAnswers.map(x => x.trim());
+      const userOrder = ordered.map(x => x.trim());
+
+      isCorrectAnswer =
+        userOrder.length === correctOrder.length &&
+        userOrder.every((val, i) => val === correctOrder[i]);
+
     } else {
       const correct = q.correctAnswers.sort().join(",");
       const user = [...selected].sort().join(",");
@@ -85,35 +91,37 @@ function QuizApp() {
     registerResult(isCorrectAnswer);
   }
 
-  function next() {
+  function resetState() {
     setSelected([]);
-    setChecked(false);
+    setOrdered([]);
     setYesNoAnswers({});
+    setChecked(false);
+    resetAnswerLock(); // 🔥 WICHTIG
+  }
+
+  function next() {
+    resetState();
     setIndex(i => i + 1);
   }
 
   function previous() {
     if (index === 0) return;
-
-    setSelected([]);
-    setChecked(false);
-    setYesNoAnswers({});
+    resetState();
     setIndex(i => i - 1);
   }
 
   function goToQuestion(num: number) {
     if (num < 1 || num > questions.length) return;
 
+    resetState();
     setIndex(num - 1);
-    setSelected([]);
-    setChecked(false);
-    setYesNoAnswers({});
   }
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
+        {/* Question */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-700">
             Question {index + 1} / {questions.length}
@@ -124,6 +132,7 @@ function QuizApp() {
           </div>
         </div>
 
+        {/* Answers */}
         <div className="mb-6">
           <AnswerRenderer
             q={q}
@@ -132,9 +141,12 @@ function QuizApp() {
             checked={checked}
             yesNoAnswers={yesNoAnswers}
             setYesNo={setYesNo}
+            ordered={ordered}
+            setOrdered={setOrdered}
           />
         </div>
 
+        {/* Check */}
         {!checked && (
           <button
             onClick={checkAnswer}
@@ -144,6 +156,7 @@ function QuizApp() {
           </button>
         )}
 
+        {/* Explanation */}
         {checked && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
             <p className="font-semibold mb-2">Explanation</p>
@@ -151,6 +164,7 @@ function QuizApp() {
           </div>
         )}
 
+        {/* Navigation */}
         {checked && (
           <div className="mt-6 flex flex-col gap-3">
 
@@ -174,7 +188,6 @@ function QuizApp() {
             <div className="flex gap-2">
               <input
                 type="number"
-                placeholder="Go to question..."
                 value={jumpTo}
                 onChange={e => setJumpTo(e.target.value)}
                 className="border p-2 rounded-lg w-full"
@@ -203,7 +216,6 @@ function QuizApp() {
   );
 }
 
-/* 👉 OUTER COMPONENT (stellt Context bereit) */
 export default function Home() {
   return (
     <QuizProvider>
