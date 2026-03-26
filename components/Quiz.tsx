@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchQuestions } from "@/lib/fetchQuestions";
 import { Question } from "@/lib/parseCsv";
 import { renderRichText } from "@/lib/renderRichText";
 import AnswerRenderer from "@/components/answers/AnswerRenderer";
 import { useQuiz } from "@/context/QuizContext";
 import { useQuizEngine } from "@/hooks/useQuizEngine";
+import { useQuestionLoader } from "@/hooks/useQuestionLoader";
 
 type Props = {
   initialState?: any;
@@ -16,7 +16,12 @@ type Props = {
 };
 
 export default function Quiz({ initialState, skipSim, range, reviewMode }: Props) {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const questions = useQuestionLoader({
+    range,
+    skipSim,
+    reviewMode,
+    initialState,
+  });
   const [jumpTo, setJumpTo] = useState("");
 
   const { setScore } = useQuiz();
@@ -44,46 +49,19 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
     saveAndExit
   } = useQuizEngine({ questions, range });
 
-  useEffect(() => {
-    fetchQuestions().then(allQuestions => {
-      let q = [...allQuestions];
+useEffect(() => {
+  if (questions.length) {
+    resetIndex();
+  }
+}, [questions]);
 
-      if (range) {
-        const parts = range.split("-").map(n => parseInt(n.trim(), 10));
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          const start = Math.max(parts[0], 1);
-          const end = Math.min(parts[1], q.length);
-          q = q.slice(start - 1, end);
-        }
-      }
-
-      if (skipSim) {
-        q = q.filter(q =>
-          !q.question.trim().toUpperCase().startsWith("SIMULATION")
-        );
-      }
-
-      if (reviewMode === "review" && initialState) {
-        const results = initialState.results || {};
-        const marked = new Set(initialState.marked || []);
-
-        q = q.filter(question => {
-          const result = results[question.id];
-          const isWrong = result === "wrong";
-          const isUnanswered = !result;
-          const isMarked = marked.has(question.id);
-          return isWrong || isUnanswered || isMarked;
-        });
-      }
-
-      setQuestions(q);
-      resetIndex();
-
-      if (!initialState) {
-        setScore(0);
-      }
-    });
-  }, [skipSim, range, reviewMode, initialState]);
+useEffect(() => {
+  if (initialState) {
+    setScore(initialState.score || 0);
+  } else {
+    setScore(0);
+  }
+}, [initialState]);
 
   if (!questions.length || !q) return <div>Loading...</div>;
 
