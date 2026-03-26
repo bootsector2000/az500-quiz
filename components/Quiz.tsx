@@ -198,27 +198,6 @@ export default function Quiz({ initialState, skipSim }: Props) {
           setMultiAnswer={setMultiAnswer}
         />
 
-        {/* 🔥 Jump (immer sichtbar) */}
-        <div className="mt-4 flex gap-2">
-          <input
-            type="number"
-            placeholder="Go to question..."
-            value={jumpTo}
-            onChange={e => setJumpTo(e.target.value)}
-            className="border p-2 rounded-lg w-full"
-          />
-
-          <button
-            onClick={() => {
-              goToQuestion(Number(jumpTo));
-              setJumpTo("");
-            }}
-            className="bg-blue-600 text-white px-4 rounded-lg"
-          >
-            Go
-          </button>
-        </div>
-
         {/* Check */}
         {!checked && (
           <button
@@ -273,6 +252,26 @@ export default function Quiz({ initialState, skipSim }: Props) {
             </div>
           </>
         )}
+        {/* Jump */}
+              <div className="mt-4 flex gap-2">
+                <input
+                  type="number"
+                  placeholder="Go to question..."
+                  value={jumpTo}
+                  onChange={e => setJumpTo(e.target.value)}
+                  className="border p-2 rounded-lg w-full"
+                />
+
+                <button
+                  onClick={() => {
+                    goToQuestion(Number(jumpTo));
+                    setJumpTo("");
+                  }}
+                  className="bg-blue-600 text-white px-4 rounded-lg"
+                >
+                  Go
+                </button>
+              </div>
 
       </div>
     </div>
