@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Question } from "@/lib/parseCsv";
-import { renderRichText } from "@/lib/renderRichText";
-import AnswerRenderer from "@/components/answers/AnswerRenderer";
 import { useQuiz } from "@/context/QuizContext";
 import { useQuizEngine } from "@/hooks/useQuizEngine";
 import { useQuestionLoader } from "@/hooks/useQuestionLoader";
 
 import QuizHeader from "@/components/quiz/QuizHeader";
 import QuizNavigation from "@/components/quiz/QuizNavigation";
+import QuestionCard from "@/components/quiz/QuestionCard";
 
 type Props = {
   initialState?: any;
@@ -25,6 +23,7 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
     reviewMode,
     initialState,
   });
+
   const [jumpTo, setJumpTo] = useState("");
 
   const { setScore } = useQuiz();
@@ -52,27 +51,21 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
     saveAndExit
   } = useQuizEngine({ questions, range });
 
-useEffect(() => {
-  if (questions.length) {
-    resetIndex();
-  }
-}, [questions]);
+  useEffect(() => {
+    if (questions.length) {
+      resetIndex();
+    }
+  }, [questions]);
 
-useEffect(() => {
-  if (initialState) {
-    setScore(initialState.score || 0);
-  } else {
-    setScore(0);
-  }
-}, [initialState]);
+  useEffect(() => {
+    if (initialState) {
+      setScore(initialState.score || 0);
+    } else {
+      setScore(0);
+    }
+  }, [initialState]);
 
   if (!questions.length || !q) return <div>Loading...</div>;
-
-  const isLast = index === questions.length - 1;
-
-  const percent = questions.length
-    ? Math.round((score / questions.length) * 100)
-    : 0;
 
   function toggleAnswer(key: string) {
     if (checked) return;
@@ -108,60 +101,33 @@ useEffect(() => {
 
         <QuizHeader index={index} total={questions.length} />
 
-        <div className="mb-4">
-          {renderRichText(q.question, q.images)}
-        </div>
-
-        <AnswerRenderer
+        <QuestionCard
           q={q}
-          selected={selected}
-          toggleAnswer={toggleAnswer}
           checked={checked}
-          yesNoAnswers={yesNoAnswers}
-          setYesNo={setYesNo}
+          selected={selected}
           ordered={ordered}
-          setOrdered={setOrdered}
+          yesNoAnswers={yesNoAnswers}
           multiAnswers={multiAnswers}
+          marked={marked}
+          toggleAnswer={toggleAnswer}
+          setYesNo={setYesNo}
+          setOrdered={setOrdered}
           setMultiAnswer={setMultiAnswer}
+          toggleMark={toggleMark}
+          checkAnswer={checkAnswer}
         />
 
-        {!checked && (
-          <>
-            <label className="flex items-center gap-2 mt-4 text-sm">
-              <input
-                type="checkbox"
-                checked={marked.includes(q.id)}
-                onChange={toggleMark}
-              />
-              Mark question
-            </label>
+        {/* ✅ FIX: Navigation IMMER rendern */}
+        <QuizNavigation
+          index={index}
+          total={questions.length}
+          score={score}
+          onNext={next}
+          onPrevious={previous}
+          onSave={saveAndExit}
+        />
 
-            <button
-              onClick={checkAnswer}
-              className="mt-2 w-full bg-blue-600 text-white p-2 rounded"
-            >
-              Check
-            </button>
-          </>
-        )}
-
-        {checked && (
-          <>
-            <div className="mt-4 p-3 border rounded bg-gray-50">
-              {renderRichText(q.explanation, q.images)}
-            </div>
-
-            <QuizNavigation
-              index={index}
-              total={questions.length}
-              score={score}
-              onNext={next}
-              onPrevious={previous}
-              onSave={saveAndExit}
-            />
-          </>
-        )}
-
+        {/* Jump */}
         <div className="mt-6 flex gap-2">
           <input
             type="number"
