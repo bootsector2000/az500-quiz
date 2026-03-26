@@ -4,7 +4,7 @@ export function renderRichText(text: string, images: Record<string, string>) {
   const parts = text.split(/(<img\d+>|https?:\/\/[^\s]+)/g);
 
   return (
-    <div className="text-black">
+    <div className="text-black whitespace-pre-line">
       {parts.map((part, index) => {
         const imgMatch = part.trim().match(/<img(\d+)>/i);
 
