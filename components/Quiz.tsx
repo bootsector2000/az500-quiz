@@ -48,7 +48,10 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
       }
 
       setQuestions(q);
-      setScore(0);
+      // 🔥 nur reset wenn KEIN Save geladen wird
+      if (!initialState) {
+        setScore(0);
+      }
     });
   }, [skipSim, range]);
 
