@@ -8,6 +8,9 @@ import { useQuiz } from "@/context/QuizContext";
 import { useQuizEngine } from "@/hooks/useQuizEngine";
 import { useQuestionLoader } from "@/hooks/useQuestionLoader";
 
+import QuizHeader from "@/components/quiz/QuizHeader";
+import QuizNavigation from "@/components/quiz/QuizNavigation";
+
 type Props = {
   initialState?: any;
   skipSim?: boolean;
@@ -103,9 +106,7 @@ useEffect(() => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
-        <h2 className="text-xl font-semibold mb-4">
-          Question {index + 1} / {questions.length}
-        </h2>
+        <QuizHeader index={index} total={questions.length} />
 
         <div className="mb-4">
           {renderRichText(q.question, q.images)}
@@ -150,47 +151,14 @@ useEffect(() => {
               {renderRichText(q.explanation, q.images)}
             </div>
 
-            <div className="mt-6 flex flex-col gap-3">
-
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={marked.includes(q.id)}
-                  onChange={toggleMark}
-                />
-                Mark question
-              </label>
-
-              <div className="flex justify-between">
-                <button
-                  onClick={previous}
-                  disabled={index === 0}
-                  className="bg-gray-300 px-4 py-2 rounded-lg"
-                >
-                  Previous
-                </button>
-
-                {!isLast && (
-                  <button
-                    onClick={next}
-                    className="bg-black text-white px-4 py-2 rounded-lg"
-                  >
-                    Next
-                  </button>
-                )}
-              </div>
-
-              <button
-                onClick={saveAndExit}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg"
-              >
-                Save & Exit
-              </button>
-
-              <div className="text-right text-gray-600">
-                Score: {score} / {questions.length} ({percent}%)
-              </div>
-            </div>
+            <QuizNavigation
+              index={index}
+              total={questions.length}
+              score={score}
+              onNext={next}
+              onPrevious={previous}
+              onSave={saveAndExit}
+            />
           </>
         )}
 
