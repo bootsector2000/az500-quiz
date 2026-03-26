@@ -15,7 +15,6 @@ type Props = {
   reviewMode?: "all" | "review";
 };
 
-// 🔥 WICHTIG: Props FIX
 export default function Quiz({ initialState, skipSim, range, reviewMode }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
@@ -26,81 +25,79 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
   const [multiAnswers, setMultiAnswers] = useState<Record<string, string>>({});
   const [jumpTo, setJumpTo] = useState("");
   const [results, setResults] = useState<Record<string, "correct" | "wrong">>({});
+  const [marked, setMarked] = useState<string[]>([]);
 
   const { score, setScore, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
 
-useEffect(() => {
-  fetchQuestions().then(allQuestions => {
+  function toggleMark() {
+    setMarked(prev =>
+      prev.includes(q.id)
+        ? prev.filter(id => id !== q.id)
+        : [...prev, q.id]
+    );
+  }
 
-    let q = [...allQuestions]; // 🔥 wichtig: saubere Kopie
+  useEffect(() => {
+    fetchQuestions().then(allQuestions => {
+      let q = [...allQuestions];
 
-    // 1. RANGE
-    if (range) {
-      const parts = range.split("-").map(n => parseInt(n.trim(), 10));
-
-      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-        const start = Math.max(parts[0], 1);
-        const end = Math.min(parts[1], q.length);
-
-        q = q.slice(start - 1, end);
+      if (range) {
+        const parts = range.split("-").map(n => parseInt(n.trim(), 10));
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          const start = Math.max(parts[0], 1);
+          const end = Math.min(parts[1], q.length);
+          q = q.slice(start - 1, end);
+        }
       }
-    }
 
-    // 2. SKIP SIM
-    if (skipSim) {
-      q = q.filter(q =>
-        !q.question.trim().toUpperCase().startsWith("SIMULATION")
-      );
-    }
+      if (skipSim) {
+        q = q.filter(q =>
+          !q.question.trim().toUpperCase().startsWith("SIMULATION")
+        );
+      }
 
-    // 🔥 3. REVIEW → NUR AUF DIESE LISTE
-    if (reviewMode === "review" && initialState) {
-      const results = initialState.results || {};
-      const marked = new Set(initialState.marked || []);
+      if (reviewMode === "review" && initialState) {
+        const results = initialState.results || {};
+        const marked = new Set(initialState.marked || []);
 
-      q = q.filter(question => {
-        const result = results[question.id];
+        q = q.filter(question => {
+          const result = results[question.id];
+          const isWrong = result === "wrong";
+          const isUnanswered = !result;
+          const isMarked = marked.has(question.id);
+          return isWrong || isUnanswered || isMarked;
+        });
+      }
 
-        const isWrong = result === "wrong";
-        const isUnanswered = !result;
-        const isMarked = marked.has(question.id);
+      setQuestions(q);
+      setIndex(0);
 
-        return isWrong || isUnanswered || isMarked;
-      });
-    }
+      if (!initialState) {
+        setScore(0);
+      }
+    });
+  }, [skipSim, range, reviewMode, initialState]);
 
-    setQuestions(q);
+  useEffect(() => {
+    if (!initialState) return;
+
     setIndex(0);
-
-    if (!initialState) {
-      setScore(0);
-    }
-  });
-}, [skipSim, range, reviewMode, initialState]);
-
-useEffect(() => {
-  if (!initialState) return;
-
-  setIndex(0); // 🔥 immer von vorne starten
-
-  // 🔥 ALLE ANSWERS RESETTEN
-  setSelected([]);
-  setOrdered([]);
-  setYesNoAnswers({});
-  setMultiAnswers({});
-
-  // 🔥 Status behalten
-  setScore(initialState.score || 0);
-  setResults(initialState.results || {});
-}, [initialState]);
+    setSelected([]);
+    setOrdered([]);
+    setYesNoAnswers({});
+    setMultiAnswers({});
+    setScore(initialState.score || 0);
+    setResults(initialState.results || {});
+    setMarked(initialState.marked || []);
+  }, [initialState]);
 
   if (!questions.length) return <div>Loading...</div>;
 
   const q = questions[index];
 
   const percent = questions.length
-  ? Math.round((score / questions.length) * 100)
-  : 0;
+    ? Math.round((score / questions.length) * 100)
+    : 0;
 
   function resetState() {
     setSelected([]);
@@ -136,7 +133,7 @@ useEffect(() => {
       ordered,
       yesNoAnswers,
       multiAnswers,
-      marked: [],
+      marked,
       range,
       results,
     });
@@ -180,7 +177,6 @@ useEffect(() => {
       isCorrectAnswer = Object.entries(correct).every(
         ([box, val]) => multiAnswers[box] === val
       );
-
     } else if (q.type === "yesno") {
       const parsed = [];
 
@@ -194,7 +190,6 @@ useEffect(() => {
       isCorrectAnswer = parsed.every(entry =>
         yesNoAnswers[entry.key] === entry.value
       );
-
     } else if (q.type === "drag") {
       const correctOrder = q.correctAnswers.map(x => x.trim());
       const userOrder = ordered.map(x => x.trim());
@@ -202,7 +197,6 @@ useEffect(() => {
       isCorrectAnswer =
         userOrder.length === correctOrder.length &&
         userOrder.every((val, i) => val === correctOrder[i]);
-
     } else {
       const correct = q.correctAnswers.sort().join(",");
       const user = [...selected].sort().join(",");
@@ -242,15 +236,28 @@ useEffect(() => {
           setMultiAnswer={setMultiAnswer}
         />
 
+        {/* 🔥 BEFORE CHECK */}
         {!checked && (
-          <button
-            onClick={checkAnswer}
-            className="mt-4 w-full bg-blue-600 text-white p-2 rounded"
-          >
-            Check
-          </button>
+          <>
+            <label className="flex items-center gap-2 mt-4 text-sm">
+              <input
+                type="checkbox"
+                checked={marked.includes(q.id)}
+                onChange={toggleMark}
+              />
+              Mark question
+            </label>
+
+            <button
+              onClick={checkAnswer}
+              className="mt-2 w-full bg-blue-600 text-white p-2 rounded"
+            >
+              Check
+            </button>
+          </>
         )}
 
+        {/* 🔥 AFTER CHECK */}
         {checked && (
           <>
             <div className="mt-4 p-3 border rounded bg-gray-50">
@@ -258,6 +265,16 @@ useEffect(() => {
             </div>
 
             <div className="mt-6 flex flex-col gap-3">
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={marked.includes(q.id)}
+                  onChange={toggleMark}
+                />
+                Mark question
+              </label>
+
               <div className="flex justify-between">
                 <button onClick={previous} disabled={index === 0} className="bg-gray-300 px-4 py-2 rounded-lg">
                   Previous
