@@ -25,6 +25,10 @@ function goToQuestion(num: number) {
   setIndex(num - 1);
 }
 
+function resetIndex() {
+  setIndex(0);
+}
+
   const q = questions[index];
 
   return {
@@ -33,5 +37,6 @@ function goToQuestion(num: number) {
     next,
     previous,
     goToQuestion,
+    resetIndex,
   };
 }

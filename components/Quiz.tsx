@@ -23,7 +23,7 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
   resetState,
 });
 
-  const { index, q, next, previous, goToQuestion } = engine;
+  const { index, q, next, previous, goToQuestion, resetIndex } = engine;
 
   const [selected, setSelected] = useState<string[]>([]);
   const [ordered, setOrdered] = useState<string[]>([]);
@@ -76,7 +76,7 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
       }
 
       setQuestions(q);
-      setIndex(0);
+      resetIndex();
 
       if (!initialState) {
         setScore(0);
@@ -87,7 +87,7 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
   useEffect(() => {
     if (!initialState) return;
 
-    setIndex(0);
+    resetIndex();
     setSelected([]);
     setOrdered([]);
     setYesNoAnswers({});
