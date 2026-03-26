@@ -11,6 +11,7 @@ export type SavedState = {
   yesNoAnswers: Record<string, string>;
   multiAnswers: Record<string, string>;
   marked: string[];
+  range?: string;
 };
 
 const KEY = "quiz_saves";

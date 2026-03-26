@@ -11,6 +11,7 @@ export default function Home() {
   const [saves, setSaves] = useState<SavedState[]>([]);
   const [activeSave, setActiveSave] = useState<SavedState | null>(null);
   const [skipSim, setSkipSim] = useState(false);
+  const [range, setRange] = useState<string>("1-");
 
   useEffect(() => {
     setSaves(loadAllStates());
@@ -19,26 +20,32 @@ export default function Home() {
   if (mode === "menu") {
     return (
       <Menu
-  saves={saves}
-onNew={(skip) => {
-  setSkipSim(skip);
-  setActiveSave(null);
-  setMode("quiz");
-}}
-  onLoad={(s) => {
-    setActiveSave(s);
-    setMode("quiz");
-  }}
-  onDelete={() => {
-    setSaves(loadAllStates());
-  }}
-/>
+        saves={saves}
+        onNew={(skip, r) => {
+          setSkipSim(skip);
+          setRange(r);
+          setActiveSave(null);
+          setMode("quiz");
+        }}
+        onLoad={(s) => {
+          setActiveSave(s);
+          setRange(s.range || "1-"); // 🔥 Range laden
+          setMode("quiz");
+        }}
+        onDelete={() => {
+          setSaves(loadAllStates());
+        }}
+      />
     );
   }
 
   return (
     <QuizProvider>
-      <Quiz initialState={activeSave} skipSim={skipSim} />
+      <Quiz
+        initialState={activeSave}
+        skipSim={skipSim}
+        range={range}
+      />
     </QuizProvider>
   );
 }

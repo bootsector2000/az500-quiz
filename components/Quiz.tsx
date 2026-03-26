@@ -11,9 +11,10 @@ import { saveState } from "@/lib/storage";
 type Props = {
   initialState?: any;
   skipSim?: boolean;
+  range?: string;
 };
 
-export default function Quiz({ initialState, skipSim }: Props) {
+export default function Quiz({ initialState, skipSim, range }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
 
@@ -27,14 +28,28 @@ export default function Quiz({ initialState, skipSim }: Props) {
 
   useEffect(() => {
     fetchQuestions().then(q => {
+
+      // 🔥 RANGE FILTER
+      if (range) {
+        const parts = range.split("-").map(n => parseInt(n.trim(), 10));
+
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          const start = Math.max(parts[0], 1);
+          const end = Math.min(parts[1], q.length);
+
+          q = q.slice(start - 1, end);
+        }
+      }
+
       if (skipSim) {
         q = q.filter(q =>
           !q.question.trim().toUpperCase().startsWith("SIMULATION")
         );
       }
+
       setQuestions(q);
     });
-  }, [skipSim]);
+  }, [skipSim, range]);
 
   useEffect(() => {
     if (!initialState) return;
@@ -51,8 +66,6 @@ export default function Quiz({ initialState, skipSim }: Props) {
 
   const q = questions[index];
 
-  /* ---------------- RESET ---------------- */
-
   function resetState() {
     setSelected([]);
     setOrdered([]);
@@ -61,8 +74,6 @@ export default function Quiz({ initialState, skipSim }: Props) {
     setChecked(false);
     resetAnswerLock();
   }
-
-  /* ---------------- NAVIGATION ---------------- */
 
   function next() {
     resetState();
@@ -81,8 +92,6 @@ export default function Quiz({ initialState, skipSim }: Props) {
     setIndex(num - 1);
   }
 
-  /* ---------------- SAVE ---------------- */
-
   function saveAndExit() {
     saveState({
       index,
@@ -92,12 +101,11 @@ export default function Quiz({ initialState, skipSim }: Props) {
       yesNoAnswers,
       multiAnswers,
       marked: [],
+      range, // 🔥 speichern
     });
 
     window.location.reload();
   }
-
-  /* ---------------- ANSWERS ---------------- */
 
   function toggleAnswer(key: string) {
     if (checked) return;
@@ -127,8 +135,6 @@ export default function Quiz({ initialState, skipSim }: Props) {
     }));
   }
 
-  /* ---------------- CHECK ---------------- */
-
   function checkAnswer() {
     let isCorrectAnswer = false;
 
@@ -148,9 +154,9 @@ export default function Quiz({ initialState, skipSim }: Props) {
         });
       }
 
-      isCorrectAnswer = parsed.every(entry => {
-        return yesNoAnswers[entry.key] === entry.value;
-      });
+      isCorrectAnswer = parsed.every(entry =>
+        yesNoAnswers[entry.key] === entry.value
+      );
 
     } else if (q.type === "drag") {
       const correctOrder = q.correctAnswers.map(x => x.trim());
@@ -169,13 +175,10 @@ export default function Quiz({ initialState, skipSim }: Props) {
     registerResult(isCorrectAnswer);
   }
 
-  /* ---------------- UI ---------------- */
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
-        {/* Question */}
         <h2 className="text-xl font-semibold mb-4">
           Question {index + 1} / {questions.length}
         </h2>
@@ -184,7 +187,6 @@ export default function Quiz({ initialState, skipSim }: Props) {
           {renderRichText(q.question, q.images)}
         </div>
 
-        {/* Answers */}
         <AnswerRenderer
           q={q}
           selected={selected}
@@ -198,7 +200,6 @@ export default function Quiz({ initialState, skipSim }: Props) {
           setMultiAnswer={setMultiAnswer}
         />
 
-        {/* Check */}
         {!checked && (
           <button
             onClick={checkAnswer}
@@ -208,70 +209,53 @@ export default function Quiz({ initialState, skipSim }: Props) {
           </button>
         )}
 
-        {/* After Check */}
         {checked && (
           <>
-            {/* Explanation */}
             <div className="mt-4 p-3 border rounded bg-gray-50">
               {renderRichText(q.explanation, q.images)}
             </div>
 
-            {/* Navigation */}
             <div className="mt-6 flex flex-col gap-3">
-
               <div className="flex justify-between">
-                <button
-                  onClick={previous}
-                  disabled={index === 0}
-                  className="bg-gray-300 px-4 py-2 rounded-lg"
-                >
+                <button onClick={previous} disabled={index === 0} className="bg-gray-300 px-4 py-2 rounded-lg">
                   Previous
                 </button>
-
-                <button
-                  onClick={next}
-                  className="bg-black text-white px-4 py-2 rounded-lg"
-                >
+                <button onClick={next} className="bg-black text-white px-4 py-2 rounded-lg">
                   Next
                 </button>
               </div>
 
-              {/* Save */}
-              <button
-                onClick={saveAndExit}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg"
-              >
+              <button onClick={saveAndExit} className="bg-red-500 text-white px-4 py-2 rounded-lg">
                 Save & Exit
               </button>
 
-              {/* Score */}
               <div className="text-right text-gray-600">
                 Score: {score} / {questions.length}
               </div>
-
             </div>
           </>
         )}
-        {/* Jump */}
-              <div className="mt-4 flex gap-2">
-                <input
-                  type="number"
-                  placeholder="Go to question..."
-                  value={jumpTo}
-                  onChange={e => setJumpTo(e.target.value)}
-                  className="border p-2 rounded-lg w-full"
-                />
 
-                <button
-                  onClick={() => {
-                    goToQuestion(Number(jumpTo));
-                    setJumpTo("");
-                  }}
-                  className="bg-blue-600 text-white px-4 rounded-lg"
-                >
-                  Go
-                </button>
-              </div>
+        {/* Jump */}
+        <div className="mt-6 flex gap-2">
+          <input
+            type="number"
+            placeholder="Go to question..."
+            value={jumpTo}
+            onChange={e => setJumpTo(e.target.value)}
+            className="border p-2 rounded-lg w-full"
+          />
+
+          <button
+            onClick={() => {
+              goToQuestion(Number(jumpTo));
+              setJumpTo("");
+            }}
+            className="bg-blue-600 text-white px-4 rounded-lg"
+          >
+            Go
+          </button>
+        </div>
 
       </div>
     </div>
