@@ -27,29 +27,25 @@ export default function Quiz({ initialState, skipSim }: Props) {
 
   useEffect(() => {
     fetchQuestions().then(q => {
-  if (skipSim) {
-    q = q.filter(q =>
-      !q.question.trim().toUpperCase().startsWith("SIMULATION")
-    );
-  }
+      if (skipSim) {
+        q = q.filter(q =>
+          !q.question.trim().toUpperCase().startsWith("SIMULATION")
+        );
+      }
+      setQuestions(q);
+    });
+  }, [skipSim]);
 
-  setQuestions(q);
-});
-  }, []);
+  useEffect(() => {
+    if (!initialState) return;
 
-useEffect(() => {
-  if (!initialState) return;
-
-  setIndex(initialState.index || 0);
-  setSelected(initialState.selected || []);
-  setOrdered(initialState.ordered || []);
-  setYesNoAnswers(initialState.yesNoAnswers || {});
-  setMultiAnswers(initialState.multiAnswers || {});
-
-  // 🔥 DAS IST DER FIX
-  setScore(initialState.score || 0);
-
-}, [initialState]);
+    setIndex(initialState.index || 0);
+    setSelected(initialState.selected || []);
+    setOrdered(initialState.ordered || []);
+    setYesNoAnswers(initialState.yesNoAnswers || {});
+    setMultiAnswers(initialState.multiAnswers || {});
+    setScore(initialState.score || 0);
+  }, [initialState]);
 
   if (!questions.length) return <div>Loading...</div>;
 
@@ -138,7 +134,6 @@ useEffect(() => {
 
     if (q.type === "multibox") {
       const correct = q.multiCorrect || {};
-
       isCorrectAnswer = Object.entries(correct).every(
         ([box, val]) => multiAnswers[box] === val
       );
@@ -203,6 +198,27 @@ useEffect(() => {
           setMultiAnswer={setMultiAnswer}
         />
 
+        {/* 🔥 Jump (immer sichtbar) */}
+        <div className="mt-4 flex gap-2">
+          <input
+            type="number"
+            placeholder="Go to question..."
+            value={jumpTo}
+            onChange={e => setJumpTo(e.target.value)}
+            className="border p-2 rounded-lg w-full"
+          />
+
+          <button
+            onClick={() => {
+              goToQuestion(Number(jumpTo));
+              setJumpTo("");
+            }}
+            className="bg-blue-600 text-white px-4 rounded-lg"
+          >
+            Go
+          </button>
+        </div>
+
         {/* Check */}
         {!checked && (
           <button
@@ -238,27 +254,6 @@ useEffect(() => {
                   className="bg-black text-white px-4 py-2 rounded-lg"
                 >
                   Next
-                </button>
-              </div>
-
-              {/* Jump */}
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  placeholder="Go to question..."
-                  value={jumpTo}
-                  onChange={e => setJumpTo(e.target.value)}
-                  className="border p-2 rounded-lg w-full"
-                />
-
-                <button
-                  onClick={() => {
-                    goToQuestion(Number(jumpTo));
-                    setJumpTo("");
-                  }}
-                  className="bg-blue-600 text-white px-4 rounded-lg"
-                >
-                  Go
                 </button>
               </div>
 
