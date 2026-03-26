@@ -9,10 +9,11 @@ import { useQuiz } from "@/context/QuizContext";
 import { saveState } from "@/lib/storage";
 
 type Props = {
-initialState?: any;
+  initialState?: any;
+  skipSim?: boolean;
 };
 
-export default function Quiz({ initialState }: Props) {
+export default function Quiz({ initialState, skipSim }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
 
@@ -25,7 +26,15 @@ export default function Quiz({ initialState }: Props) {
   const { score, setScore, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
 
   useEffect(() => {
-    fetchQuestions().then(setQuestions);
+    fetchQuestions().then(q => {
+  if (skipSim) {
+    q = q.filter(q =>
+      !q.question.trim().toUpperCase().startsWith("SIMULATION")
+    );
+  }
+
+  setQuestions(q);
+});
   }, []);
 
 useEffect(() => {
@@ -45,9 +54,6 @@ useEffect(() => {
   if (!questions.length) return <div>Loading...</div>;
 
   const q = questions[index];
-
-
-
 
   /* ---------------- RESET ---------------- */
 

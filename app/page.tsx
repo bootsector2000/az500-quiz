@@ -10,6 +10,7 @@ export default function Home() {
   const [mode, setMode] = useState<"menu" | "quiz">("menu");
   const [saves, setSaves] = useState<SavedState[]>([]);
   const [activeSave, setActiveSave] = useState<SavedState | null>(null);
+  const [skipSim, setSkipSim] = useState(false);
 
   useEffect(() => {
     setSaves(loadAllStates());
@@ -19,10 +20,11 @@ export default function Home() {
     return (
       <Menu
   saves={saves}
-  onNew={() => {
-    setActiveSave(null);
-    setMode("quiz");
-  }}
+onNew={(skip) => {
+  setSkipSim(skip);
+  setActiveSave(null);
+  setMode("quiz");
+}}
   onLoad={(s) => {
     setActiveSave(s);
     setMode("quiz");
@@ -36,7 +38,7 @@ export default function Home() {
 
   return (
     <QuizProvider>
-      <Quiz initialState={activeSave} />
+      <Quiz initialState={activeSave} skipSim={skipSim} />
     </QuizProvider>
   );
 }

@@ -6,11 +6,10 @@ import { useEffect, useState } from "react";
 
 type Props = {
   saves: SavedState[];
-  onNew: () => void;
+  onNew: (skipSim: boolean) => void;
   onLoad: (s: SavedState) => void;
   onDelete: () => void;
 };
-
 export default function Menu({
     
   saves,
@@ -19,9 +18,19 @@ export default function Menu({
   onDelete,
 }: Props) {
     const [total, setTotal] = useState(0);
-  useEffect(() => {
-    fetchQuestions().then(q => setTotal(q.length));
-  }, []);
+    const [skipSim, setSkipSim] = useState(false);
+    const [simCount, setSimCount] = useState(0);
+useEffect(() => {
+  fetchQuestions().then(q => {
+    setTotal(q.length);
+
+    const sims = q.filter(q =>
+      q.question.trim().toUpperCase().startsWith("SIMULATION")
+    );
+
+    setSimCount(sims.length);
+  });
+}, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 text-black">
@@ -32,11 +41,22 @@ export default function Menu({
         </h2>
 
         <button
-          onClick={onNew}
+          onClick={() => onNew(skipSim)}
           className="w-full bg-black text-white py-2 rounded-lg"
         >
           Neuer Versuch
         </button>
+
+        <div className="flex items-center justify-between text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={skipSim}
+              onChange={(e) => setSkipSim(e.target.checked)}
+            />
+            Skip Simulation ({simCount})
+          </label>
+        </div>
 
         {saves.length > 0 && (
           <div className="mt-4 space-y-2">
