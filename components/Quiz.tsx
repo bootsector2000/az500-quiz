@@ -23,6 +23,7 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
   const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, string>>({});
   const [multiAnswers, setMultiAnswers] = useState<Record<string, string>>({});
   const [jumpTo, setJumpTo] = useState("");
+  const [results, setResults] = useState<Record<string, "correct" | "wrong">>({});
 
   const { score, setScore, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
 
@@ -64,6 +65,7 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
     setYesNoAnswers(initialState.yesNoAnswers || {});
     setMultiAnswers(initialState.multiAnswers || {});
     setScore(initialState.score || 0);
+    setResults(initialState.results || {});
   }, [initialState]);
 
   if (!questions.length) return <div>Loading...</div>;
@@ -109,7 +111,8 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
       yesNoAnswers,
       multiAnswers,
       marked: [],
-      range, // 🔥 speichern
+      range,
+      results,
     });
 
     window.location.reload();
@@ -181,6 +184,11 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
     }
 
     registerResult(isCorrectAnswer);
+
+    setResults(prev => ({
+      ...prev,
+      [q.id]: isCorrectAnswer ? "correct" : "wrong",
+    }));
   }
 
   return (

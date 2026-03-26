@@ -12,6 +12,7 @@ export type SavedState = {
   multiAnswers: Record<string, string>;
   marked: string[];
   range?: string;
+  results?: Record<string, "correct" | "wrong">;
 };
 
 const KEY = "quiz_saves";
