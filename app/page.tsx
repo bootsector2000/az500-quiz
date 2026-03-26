@@ -12,6 +12,7 @@ export default function Home() {
   const [activeSave, setActiveSave] = useState<SavedState | null>(null);
   const [skipSim, setSkipSim] = useState(false);
   const [range, setRange] = useState<string>("1-");
+  const [reviewMode, setReviewMode] = useState<"all" | "review">("all");
 
   useEffect(() => {
     setSaves(loadAllStates());
@@ -27,11 +28,15 @@ export default function Home() {
           setActiveSave(null);
           setMode("quiz");
         }}
-        onLoad={(s) => {
-          setActiveSave(s);
-          setRange(s.range || "1-"); // 🔥 Range laden
-          setMode("quiz");
-        }}
+onLoad={(s, mode) => {
+  setActiveSave(s);
+  setReviewMode(mode);
+
+  // 🔥 DAS IST DER FIX
+  setRange(s.range || "1-");
+
+  setMode("quiz");
+}}
         onDelete={() => {
           setSaves(loadAllStates());
         }}
@@ -41,11 +46,12 @@ export default function Home() {
 
   return (
     <QuizProvider>
-      <Quiz
-        initialState={activeSave}
-        skipSim={skipSim}
-        range={range}
-      />
+    <Quiz
+      initialState={activeSave}
+      skipSim={skipSim}
+      range={range}
+      reviewMode={reviewMode}
+    />
     </QuizProvider>
   );
 }

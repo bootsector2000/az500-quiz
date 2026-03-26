@@ -12,9 +12,11 @@ type Props = {
   initialState?: any;
   skipSim?: boolean;
   range?: string;
+  reviewMode?: "all" | "review";
 };
 
-export default function Quiz({ initialState, skipSim, range }: Props) {
+// 🔥 WICHTIG: Props FIX
+export default function Quiz({ initialState, skipSim, range, reviewMode }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
 
@@ -27,46 +29,70 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
 
   const { score, setScore, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
 
-  useEffect(() => {
-    fetchQuestions().then(q => {
+useEffect(() => {
+  fetchQuestions().then(allQuestions => {
 
-      // 🔥 RANGE FILTER
-      if (range) {
-        const parts = range.split("-").map(n => parseInt(n.trim(), 10));
+    let q = [...allQuestions]; // 🔥 wichtig: saubere Kopie
 
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          const start = Math.max(parts[0], 1);
-          const end = Math.min(parts[1], q.length);
+    // 1. RANGE
+    if (range) {
+      const parts = range.split("-").map(n => parseInt(n.trim(), 10));
 
-          q = q.slice(start - 1, end);
-        }
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        const start = Math.max(parts[0], 1);
+        const end = Math.min(parts[1], q.length);
+
+        q = q.slice(start - 1, end);
       }
+    }
 
-      if (skipSim) {
-        q = q.filter(q =>
-          !q.question.trim().toUpperCase().startsWith("SIMULATION")
-        );
-      }
+    // 2. SKIP SIM
+    if (skipSim) {
+      q = q.filter(q =>
+        !q.question.trim().toUpperCase().startsWith("SIMULATION")
+      );
+    }
 
-      setQuestions(q);
-      // 🔥 nur reset wenn KEIN Save geladen wird
-      if (!initialState) {
-        setScore(0);
-      }
-    });
-  }, [skipSim, range]);
+    // 🔥 3. REVIEW → NUR AUF DIESE LISTE
+    if (reviewMode === "review" && initialState) {
+      const results = initialState.results || {};
+      const marked = new Set(initialState.marked || []);
 
-  useEffect(() => {
-    if (!initialState) return;
+      q = q.filter(question => {
+        const result = results[question.id];
 
-    setIndex(initialState.index || 0);
-    setSelected(initialState.selected || []);
-    setOrdered(initialState.ordered || []);
-    setYesNoAnswers(initialState.yesNoAnswers || {});
-    setMultiAnswers(initialState.multiAnswers || {});
-    setScore(initialState.score || 0);
-    setResults(initialState.results || {});
-  }, [initialState]);
+        const isWrong = result === "wrong";
+        const isUnanswered = !result;
+        const isMarked = marked.has(question.id);
+
+        return isWrong || isUnanswered || isMarked;
+      });
+    }
+
+    setQuestions(q);
+    setIndex(0);
+
+    if (!initialState) {
+      setScore(0);
+    }
+  });
+}, [skipSim, range, reviewMode, initialState]);
+
+useEffect(() => {
+  if (!initialState) return;
+
+  setIndex(0); // 🔥 immer von vorne starten
+
+  // 🔥 ALLE ANSWERS RESETTEN
+  setSelected([]);
+  setOrdered([]);
+  setYesNoAnswers({});
+  setMultiAnswers({});
+
+  // 🔥 Status behalten
+  setScore(initialState.score || 0);
+  setResults(initialState.results || {});
+}, [initialState]);
 
   if (!questions.length) return <div>Loading...</div>;
 

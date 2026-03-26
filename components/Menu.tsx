@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 type Props = {
   saves: SavedState[];
   onNew: (skipSim: boolean, range: string) => void;
-  onLoad: (s: SavedState) => void;
+  onLoad: (s: SavedState, mode: "all" | "review") => void;
   onDelete: () => void;
 };
 
@@ -22,6 +22,9 @@ export default function Menu({
   const [simCount, setSimCount] = useState(0);
   const [range, setRange] = useState("1-");
 
+  // 🔥 NEW
+  const [modeMap, setModeMap] = useState<Record<string, "all" | "review">>({});
+
   useEffect(() => {
     fetchQuestions().then(q => {
       setTotal(q.length);
@@ -35,7 +38,6 @@ export default function Menu({
     });
   }, []);
 
-  /* 🔥 NEU: Range → Anzahl berechnen */
   function getRangeCount(range?: string, total?: number) {
     if (!range) return total || 0;
 
@@ -53,13 +55,8 @@ export default function Menu({
       <div className="bg-white p-6 rounded-2xl shadow-lg w-96 space-y-4 text-black">
 
         <div className="text-center">
-          <h2 className="text-xl font-semibold">
-            AZ-500 Quiz
-          </h2>
-
-          <div className="text-sm text-gray-600">
-            {total} Questions
-          </div>
+          <h2 className="text-xl font-semibold">AZ-500 Quiz</h2>
+          <div className="text-sm text-gray-600">{total} Questions</div>
         </div>
 
         <button
@@ -69,7 +66,7 @@ export default function Menu({
           Neuer Versuch
         </button>
 
-        {/* Select Questions */}
+        {/* Range */}
         <div className="flex flex-col gap-1 text-sm">
           <label>Select questions</label>
           <input
@@ -77,11 +74,10 @@ export default function Menu({
             value={range}
             onChange={e => setRange(e.target.value)}
             className="border p-2 rounded"
-            placeholder="1-60"
           />
         </div>
 
-        {/* Skip Simulation */}
+        {/* Skip Sim */}
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center gap-2">
             <input
@@ -99,15 +95,11 @@ export default function Menu({
 
             {saves.map((s) => {
               const max = getRangeCount(s.range, total);
-              const percent = max
-                ? Math.round((s.score / max) * 100)
-                : 0;
+              const percent = max ? Math.round((s.score / max) * 100) : 0;
 
               return (
-                <div
-                  key={s.id}
-                  className="border p-2 rounded flex justify-between items-center"
-                >
+                <div key={s.id} className="border p-2 rounded space-y-2">
+
                   <div>
                     <div className="text-sm font-medium">{s.name}</div>
 
@@ -122,9 +114,36 @@ export default function Menu({
                     )}
                   </div>
 
-                  <div className="flex gap-2">
+                  {/* 🔥 MODE SELECTOR */}
+                  <div className="flex gap-3 text-xs">
+                    <label className="flex gap-1">
+                      <input
+                        type="radio"
+                        name={`mode-${s.id}`}
+checked={(modeMap[s.id] || "all") === "all"}
+onChange={() =>
+  setModeMap(prev => ({ ...prev, [s.id]: "all" }))
+}
+                      />
+                      All
+                    </label>
+
+                    <label className="flex gap-1">
+                      <input
+                        type="radio"
+                        name={`mode-${s.id}`}
+checked={(modeMap[s.id] || "all") === "review"}
+onChange={() =>
+  setModeMap(prev => ({ ...prev, [s.id]: "review" }))
+}
+                      />
+                      Review
+                    </label>
+                  </div>
+
+                  <div className="flex justify-between">
                     <button
-                      onClick={() => onLoad(s)}
+                      onClick={() => onLoad(s, modeMap[s.id] || "all")}
                       className="bg-blue-600 text-white px-3 py-1 rounded"
                     >
                       Laden
@@ -141,13 +160,12 @@ export default function Menu({
                       X
                     </button>
                   </div>
+
                 </div>
               );
             })}
-
           </div>
         )}
-
       </div>
     </div>
   );
