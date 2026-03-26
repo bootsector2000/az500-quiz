@@ -94,6 +94,7 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
   if (!questions.length) return <div>Loading...</div>;
 
   const q = questions[index];
+  const isLast = index === questions.length - 1;
 
   const percent = questions.length
     ? Math.round((score / questions.length) * 100)
@@ -275,14 +276,24 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
                 Mark question
               </label>
 
-              <div className="flex justify-between">
-                <button onClick={previous} disabled={index === 0} className="bg-gray-300 px-4 py-2 rounded-lg">
-                  Previous
-                </button>
-                <button onClick={next} className="bg-black text-white px-4 py-2 rounded-lg">
-                  Next
-                </button>
-              </div>
+<div className="flex justify-between">
+  <button
+    onClick={previous}
+    disabled={index === 0}
+    className="bg-gray-300 px-4 py-2 rounded-lg"
+  >
+    Previous
+  </button>
+
+  {!isLast && (
+    <button
+      onClick={next}
+      className="bg-black text-white px-4 py-2 rounded-lg"
+    >
+      Next
+    </button>
+  )}
+</div>
 
               <button onClick={saveAndExit} className="bg-red-500 text-white px-4 py-2 rounded-lg">
                 Save & Exit
