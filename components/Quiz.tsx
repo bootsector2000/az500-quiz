@@ -7,6 +7,7 @@ import { renderRichText } from "@/lib/renderRichText";
 import AnswerRenderer from "@/components/answers/AnswerRenderer";
 import { useQuiz } from "@/context/QuizContext";
 import { saveState } from "@/lib/storage";
+import { useQuizEngine } from "@/hooks/useQuizEngine";
 
 type Props = {
   initialState?: any;
@@ -17,7 +18,12 @@ type Props = {
 
 export default function Quiz({ initialState, skipSim, range, reviewMode }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [index, setIndex] = useState(0);
+  const engine = useQuizEngine({
+  questions,
+  resetState,
+});
+
+  const { index, q, next, previous, goToQuestion } = engine;
 
   const [selected, setSelected] = useState<string[]>([]);
   const [ordered, setOrdered] = useState<string[]>([]);
@@ -93,7 +99,6 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
 
   if (!questions.length) return <div>Loading...</div>;
 
-  const q = questions[index];
   const isLast = index === questions.length - 1;
 
   const percent = questions.length
@@ -107,23 +112,6 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
     setMultiAnswers({});
     setChecked(false);
     resetAnswerLock();
-  }
-
-  function next() {
-    resetState();
-    setIndex(i => i + 1);
-  }
-
-  function previous() {
-    if (index === 0) return;
-    resetState();
-    setIndex(i => i - 1);
-  }
-
-  function goToQuestion(num: number) {
-    if (num < 1 || num > questions.length) return;
-    resetState();
-    setIndex(num - 1);
   }
 
   function saveAndExit() {
