@@ -48,6 +48,7 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
       }
 
       setQuestions(q);
+      setScore(0);
     });
   }, [skipSim, range]);
 
@@ -65,6 +66,10 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
   if (!questions.length) return <div>Loading...</div>;
 
   const q = questions[index];
+
+  const percent = questions.length
+  ? Math.round((score / questions.length) * 100)
+  : 0;
 
   function resetState() {
     setSelected([]);
@@ -230,7 +235,7 @@ export default function Quiz({ initialState, skipSim, range }: Props) {
               </button>
 
               <div className="text-right text-gray-600">
-                Score: {score} / {questions.length}
+                Score: {score} / {questions.length} ({percent}%)
               </div>
             </div>
           </>

@@ -1,7 +1,11 @@
 export function renderRichText(text: string, images: Record<string, string>) {
   if (!text) return null;
 
-  const parts = text.split(/(<img\d+>|https?:\/\/[^\s]+)/g);
+  // 🔥 FIX: Entfernt Linebreak nach A. B. C. D.
+  //const cleaned = text.replace(/([A-D])\.\s+(?=\S)/g, "$1. ");
+  const cleaned = text;
+
+  const parts = cleaned.split(/(<img\d+>|https?:\/\/[^\s]+)/g);
 
   return (
     <div className="text-black whitespace-pre-line">
@@ -34,7 +38,6 @@ export function renderRichText(text: string, images: Record<string, string>) {
             </div>
           );
         }
-
         return <span key={index}>{part}</span>;
       })}
     </div>

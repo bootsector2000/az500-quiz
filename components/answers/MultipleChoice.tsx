@@ -37,8 +37,7 @@ export default function MultipleChoice({
             className={`p-3 border rounded-lg cursor-pointer ${state}`}
             onClick={() => toggleAnswer(a.key)}
           >
-            <span className="font-semibold">{a.key}.</span>{" "}
-            {renderRichText(a.text, q.images ?? {})}
+            {renderRichText(`${a.key}. ${a.text}`, q.images ?? {})}
           </div>
         );
       })}

@@ -25,7 +25,7 @@ export default function Menu({
   useEffect(() => {
     fetchQuestions().then(q => {
       setTotal(q.length);
-      setRange(`1-${q.length}`); // 🔥 Default setzen
+      setRange(`1-${q.length}`);
 
       const sims = q.filter(q =>
         q.question.trim().toUpperCase().startsWith("SIMULATION")
@@ -34,6 +34,19 @@ export default function Menu({
       setSimCount(sims.length);
     });
   }, []);
+
+  /* 🔥 NEU: Range → Anzahl berechnen */
+  function getRangeCount(range?: string, total?: number) {
+    if (!range) return total || 0;
+
+    const parts = range.split("-").map(n => parseInt(n.trim(), 10));
+
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return parts[1] - parts[0] + 1;
+    }
+
+    return total || 0;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 text-black">
@@ -56,7 +69,7 @@ export default function Menu({
           Neuer Versuch
         </button>
 
-        {/* 🔥 Select Questions */}
+        {/* Select Questions */}
         <div className="flex flex-col gap-1 text-sm">
           <label>Select questions</label>
           <input
@@ -84,44 +97,53 @@ export default function Menu({
           <div className="mt-4 space-y-2">
             <div className="font-semibold">Gespeicherte Tests:</div>
 
-            {saves.map((s) => (
-              <div
-                key={s.id}
-                className="border p-2 rounded flex justify-between items-center"
-              >
-                <div>
-                  <div className="text-sm font-medium">{s.name}</div>
-                  <div className="text-xs text-gray-500">
-                    Score: {s.score} / {total}
-                  </div>
-                  {s.range && (
+            {saves.map((s) => {
+              const max = getRangeCount(s.range, total);
+              const percent = max
+                ? Math.round((s.score / max) * 100)
+                : 0;
+
+              return (
+                <div
+                  key={s.id}
+                  className="border p-2 rounded flex justify-between items-center"
+                >
+                  <div>
+                    <div className="text-sm font-medium">{s.name}</div>
+
                     <div className="text-xs text-gray-500">
-                      Questions {s.range}
+                      Score: {s.score} / {max} ({percent}%)
                     </div>
-                  )}
-                </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => onLoad(s)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded"
-                  >
-                    Laden
-                  </button>
+                    {s.range && (
+                      <div className="text-xs text-gray-500">
+                        Questions {s.range}
+                      </div>
+                    )}
+                  </div>
 
-                  <button
-                    onClick={() => {
-                      if (!confirm("Delete save?")) return;
-                      deleteState(s.id);
-                      onDelete();
-                    }}
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                  >
-                    X
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onLoad(s)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded"
+                    >
+                      Laden
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (!confirm("Delete save?")) return;
+                        deleteState(s.id);
+                        onDelete();
+                      }}
+                      className="bg-red-500 text-white px-3 py-1 rounded"
+                    >
+                      X
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
           </div>
         )}
