@@ -120,25 +120,34 @@ export default function Menu({
                       <input
                         type="radio"
                         name={`mode-${s.id}`}
-checked={(modeMap[s.id] || "all") === "all"}
-onChange={() =>
-  setModeMap(prev => ({ ...prev, [s.id]: "all" }))
-}
+                        checked={(modeMap[s.id] || "all") === "all"}
+                        onChange={() =>
+                          setModeMap(prev => ({ ...prev, [s.id]: "all" }))
+                        }
                       />
                       All
                     </label>
 
-                    <label className="flex gap-1">
-                      <input
-                        type="radio"
-                        name={`mode-${s.id}`}
-checked={(modeMap[s.id] || "all") === "review"}
-onChange={() =>
-  setModeMap(prev => ({ ...prev, [s.id]: "review" }))
-}
-                      />
-                      Review
-                    </label>
+                    <div className="relative group flex gap-1 items-center">
+                      <label className="flex gap-1 items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name={`mode-${s.id}`}
+                          checked={(modeMap[s.id] || "all") === "review"}
+                          onChange={() =>
+                            setModeMap(prev => ({ ...prev, [s.id]: "review" }))
+                          }
+                        />
+                        Review
+                      </label>
+
+                      {/* Tooltip */}
+                      <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10">
+                        <div className="bg-black text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
+                          load marked, wrong and unanswered questions only
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex justify-between">
