@@ -89,21 +89,31 @@ function parseAnswers(raw: string): Answer[] {
 
   const lines = cleaned
     .replace(/\\n/g, "\n")
-    .split("\n")
-    .map(l => l.trim())
-    .filter(Boolean);
+    .split(/\r?\n/);
 
-  return lines
-    .map(line => {
-      const match = line.match(/^([A-Z]|\d+)\.\s*(.*)$/);
-      if (!match) return null;
+  const answers: Answer[] = [];
+  let current: Answer | null = null;
 
-      return {
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const match = trimmed.match(/^([A-Z]|\d+)\.\s*(.*)$/);
+
+    if (match) {
+      // neue Antwort beginnt
+      current = {
         key: match[1],
-        text: match[2].trim(),
+        text: match[2],
       };
-    })
-    .filter(Boolean) as Answer[];
+      answers.push(current);
+    } else if (current) {
+      // continuation line → anhängen!
+      current.text += "\n" + trimmed;
+    }
+  }
+
+  return answers;
 }
 
 function parseCorrect(raw: string): string[] {

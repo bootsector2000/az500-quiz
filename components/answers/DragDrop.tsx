@@ -66,8 +66,10 @@ export default function DragDrop({
             onClick={() => addToOrder(a.key)}
             className="p-3 border rounded-lg cursor-pointer hover:bg-gray-100"
           >
-            <span className="font-semibold">{a.key}.</span>{" "}
-            {renderRichText(a.text, q.images)}
+<span className="font-semibold">{a.key}.</span>{" "}
+<span className="whitespace-pre-line [&>*]:inline [&>*]:m-0">
+  {renderRichText(a.text, q.images)}
+</span>
           </div>
         ))}
       </div>
@@ -100,7 +102,9 @@ export default function DragDrop({
                 className="p-2 border rounded bg-white cursor-move"
               >
                 <span className="font-semibold">{key}.</span>{" "}
-                {renderRichText(item?.text || "", q.images)}
+<span className="whitespace-pre-line [&>*]:inline [&>*]:m-0">
+  {renderRichText(item?.text || "", q.images)}
+</span>
               </div>
             );
           })}
@@ -114,7 +118,9 @@ export default function DragDrop({
               return (
                 <div key={i} className="p-2 border rounded bg-green-100 mb-1">
                   <span className="font-semibold">{key}.</span>{" "}
-                  {renderRichText(item?.text || "", q.images)}
+<span className="whitespace-pre-line [&>*]:inline [&>*]:m-0">
+  {renderRichText(item?.text || "", q.images)}
+</span>
                 </div>
               );
             })}
