@@ -27,12 +27,11 @@ export default function DragDrop({
     normalizedOrdered.every((val, i) => val === correctOrder[i]);
 
   function addToOrder(key: string) {
-    if (ordered.includes(key)) return;
-    setOrdered(prev => [...prev, key]);
+      setOrdered(prev => [...prev, key]);
   }
 
-  function removeFromOrder(key: string) {
-    setOrdered(prev => prev.filter(k => k !== key));
+  function removeFromOrder(index: number) {
+    setOrdered(prev => prev.filter((_, i) => i !== index));
   }
 
   function handleDragStart(i: number) {
@@ -89,7 +88,7 @@ export default function DragDrop({
 
             return (
               <div
-                key={key}
+                key={`${key}-${i}`}
                 draggable
                 onDragStart={() => handleDragStart(i)}
                 onDragOver={(e) => {
@@ -97,7 +96,7 @@ export default function DragDrop({
                   handleDragOver(i);
                 }}
                 onDragEnd={handleDragEnd}
-                onClick={() => removeFromOrder(key)}
+                onClick={() => removeFromOrder(i)}
                 className="p-2 border rounded bg-white cursor-move"
               >
                 <span className="font-semibold">{key}.</span>{" "}
