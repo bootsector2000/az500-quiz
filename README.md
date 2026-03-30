@@ -15,8 +15,8 @@ Interactive quiz application for AZ-500 exam preparation.
 ![Menu](./public/showcase/menu.png)
 
 ### ❓ Quiz
-![Quiz](./showcase/questionCard1.png)
-![Quiz](./showcase/questionCard2.png)
+![Quiz1](./public/showcase/questionCard1.png)
+![Quiz2](./public/showcase/questionCard2.png)
 
 ## ✨ Features
 
