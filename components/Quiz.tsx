@@ -6,7 +6,6 @@ import { useQuizEngine } from "@/hooks/useQuizEngine";
 import { useQuestionLoader } from "@/hooks/useQuestionLoader";
 
 import QuizHeader from "@/components/quiz/QuizHeader";
-import QuizNavigation from "@/components/quiz/QuizNavigation";
 import QuestionCard from "@/components/quiz/QuestionCard";
 
 type Props = {
@@ -57,10 +56,9 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
     }
   }, [questions]);
 
-useEffect(() => {
-  // always reset score on load to avoid accumulation
-  setScore(0);
-}, [initialState]);
+  useEffect(() => {
+    setScore(0);
+  }, [initialState]);
 
   if (!questions.length || !q) return <div>Loading...</div>;
 
@@ -92,17 +90,21 @@ useEffect(() => {
     }));
   }
 
+  const isLast = index === questions.length - 1;
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
-      <QuizHeader
-        index={index}
-        total={questions.length}
-        questionId={q.id}
-        score={score}
-      />
+        {/* HEADER */}
+        <QuizHeader
+          index={index}
+          total={questions.length}
+          questionId={q.id}
+          score={score}
+        />
 
+        {/* QUESTION */}
         <QuestionCard
           q={q}
           checked={checked}
@@ -119,24 +121,46 @@ useEffect(() => {
           checkAnswer={checkAnswer}
         />
 
-        {/* ✅ FIX: Navigation IMMER rendern */}
-        <QuizNavigation
-          index={index}
-          total={questions.length}
-          score={score}
-          onNext={next}
-          onPrevious={previous}
-          onSave={saveAndExit}
-        />
+        {/* 🔹 Divider (immer sichtbar + softer) */}
+        <div className="my-6 border-t border-gray-200" />
 
-        {/* Jump */}
-        <div className="mt-6 flex gap-2">
+        {/* 🔹 Navigation */}
+        <div className="flex items-center justify-between gap-3">
+
+          <button
+            onClick={previous}
+            disabled={index === 0}
+            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg disabled:opacity-50"
+          >
+            ← Previous
+          </button>
+
+          <button
+            onClick={saveAndExit}
+            className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-400 transition"
+          >
+            Save & Exit
+          </button>
+
+          {!isLast && (
+            <button
+              onClick={next}
+              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
+            >
+              Next →
+            </button>
+          )}
+
+        </div>
+
+        {/* 🔹 Go To Question (clean, no box) */}
+        <div className="mt-6 flex gap-2 items-center">
           <input
             type="number"
-            placeholder="Go to question..."
+            placeholder="Go to Question..."
             value={jumpTo}
             onChange={e => setJumpTo(e.target.value)}
-            className="border p-2 rounded-lg w-full"
+            className="flex-1 border px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           <button
@@ -144,7 +168,7 @@ useEffect(() => {
               goToQuestion(Number(jumpTo));
               setJumpTo("");
             }}
-            className="bg-blue-600 text-white px-4 rounded-lg"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
           >
             Go
           </button>
