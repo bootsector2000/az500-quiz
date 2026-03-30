@@ -1,32 +1,61 @@
 # AZ-500 Quiz App
 
+![Next.js](https://img.shields.io/badge/Next.js-13-black)
+![React](https://img.shields.io/badge/React-TypeScript-blue)
+![License](https://img.shields.io/badge/license-Non--Commercial-red)
+
 Interactive quiz application for AZ-500 exam preparation.
-
-## Features
-
-- Multiple question types (MC, Drag & Drop, Yes/No, MultiBox)
-- Answer checking with explanations
-- Score tracking
-- Save & load progress
-- Review mode (wrong, unanswered, marked questions)
-- Range filtering (e.g. 1–50)
-- Skip simulation questions
 
 ---
 
-## Getting Started
+## 📸 Screenshots
 
-First, run the development server:
+### 🏠 Menu
+
+![Menu](./public/showcase/menu.png)
+
+### ❓ Quiz
+![Quiz1](./showcase/questionCard1.png)
+![Quiz2](./showcase/questionCard2.png)
+
+## ✨ Features
+
+- Multiple question types  
+  - Multiple Choice  
+  - Drag & Drop  
+  - Yes / No  
+  - MultiBox  
+
+- Answer validation with explanations  
+- Score tracking  
+- Save & load progress (localStorage)
+- Review mode  
+  - wrong  
+  - unanswered  
+  - marked  
+
+- Range filtering (e.g. `1-50`)  
+- Skip simulation questions  
+
+---
+
+## 🚀 Getting Started
 
 ```bash
+npm install
 npm run dev
 ```
-
 Open http://localhost:3000 in your browser.
 
 ---
 
-## License
+📊 Data Source
+
+Questions are loaded dynamically from a Google Sheets CSV export.
+
+---
+
+📜 License
 
 This project is free for personal and educational use.
 
@@ -36,6 +65,6 @@ If you are interested in using this project commercially, please contact me.
 
 ---
 
-## Disclaimer
+⚠️ Disclaimer
 
 This project is not affiliated with Microsoft.
