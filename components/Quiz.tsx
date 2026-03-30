@@ -96,7 +96,11 @@ useEffect(() => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
-        <QuizHeader index={index} total={questions.length} />
+        <QuizHeader
+          index={index}
+          total={questions.length}
+          questionId={q.id}
+        />
 
         <QuestionCard
           q={q}
