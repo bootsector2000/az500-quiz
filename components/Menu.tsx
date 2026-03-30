@@ -24,7 +24,6 @@ export default function Menu({
 
   const [modeMap, setModeMap] = useState<Record<string, "all" | "review">>({});
 
-  // 🔥 NEW: loading state
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,7 +54,6 @@ export default function Menu({
     return total || 0;
   }
 
-  // 🔥 LOADING SCREEN
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -114,21 +112,45 @@ export default function Menu({
               const max = getRangeCount(s.range, total);
               const percent = max ? Math.round((s.score / max) * 100) : 0;
 
+              const results = s.results || {};
+              const markedSet = new Set(s.marked || []);
+
+              let wrong = 0;
+              for (const qid of Object.keys(results)) {
+                if (results[qid] === "wrong") wrong++;
+              }
+
+              const unanswered = max - Object.keys(results).length;
+              const marked = markedSet.size;
+
               return (
                 <div key={s.id} className="border p-2 rounded space-y-2">
 
                   <div>
                     <div className="text-sm font-medium">{s.name}</div>
 
-                    <div className="text-xs text-gray-500">
-                      Score: {s.score} / {max} ({percent}%)
-                    </div>
-
                     {s.range && (
                       <div className="text-xs text-gray-500">
                         Questions {s.range}
                       </div>
                     )}
+
+                    <div className="text-xs text-gray-500 flex justify-between">
+                      <span>
+                        Score: {s.score} / {max} ({percent}%)
+                      </span>
+
+                      {/* 🔥 ONE TOOLTIP */}
+                      <span className="relative group cursor-default">
+                        m: {marked} | w: {wrong} | u: {unanswered}
+
+                        <span className="absolute hidden group-hover:block bottom-full mb-1 right-0 bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap leading-tight">
+                          m: marked<br />
+                          w: wrong<br />
+                          u: unanswered
+                        </span>
+                      </span>
+                    </div>
                   </div>
 
                   {/* MODE SELECTOR */}
@@ -158,7 +180,6 @@ export default function Menu({
                         Review
                       </label>
 
-                      {/* Tooltip */}
                       <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10">
                         <div className="bg-black text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
                           load marked, wrong and unanswered questions only
