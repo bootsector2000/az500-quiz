@@ -9,7 +9,16 @@ type UseQuizEngineParams = {
 };
 
 export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
-  const { score, setScore, checked, setChecked, registerResult, resetAnswerLock } = useQuiz();
+  const {
+    score,
+    setScore,
+    checked,
+    setChecked,
+    registerResult,
+    resetAnswerLock,
+    results,
+    setResults,
+  } = useQuiz();
 
   const [index, setIndex] = useState(0);
 
@@ -17,7 +26,6 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
   const [ordered, setOrdered] = useState<string[]>([]);
   const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, string>>({});
   const [multiAnswers, setMultiAnswers] = useState<Record<string, string>>({});
-  const [results, setResults] = useState<Record<string, "correct" | "wrong">>({});
   const [marked, setMarked] = useState<string[]>([]);
 
   const q = questions[index];

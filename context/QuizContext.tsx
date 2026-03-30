@@ -6,6 +6,9 @@ type QuizContextType = {
   score: number;
   checked: boolean;
 
+  results: Record<string, "correct" | "wrong">; // 🔥 neu
+  setResults: React.Dispatch<React.SetStateAction<Record<string, "correct" | "wrong">>>; // 🔥 neu
+
   setChecked: (v: boolean) => void;
   registerResult: (isCorrect: boolean) => void;
   resetAnswerLock: () => void;
@@ -17,6 +20,7 @@ const QuizContext = createContext<QuizContextType | null>(null);
 export function QuizProvider({ children }: { children: React.ReactNode }) {
   const [score, setScore] = useState(0);
   const [checked, setChecked] = useState(false);
+  const [results, setResults] = useState<Record<string, "correct" | "wrong">>({});
 
   // 🔥 verhindert doppelte Bewertung (synchron!)
   const hasAnsweredRef = useRef(false);
@@ -46,6 +50,8 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     setChecked,
     registerResult,
     resetAnswerLock,
+    results, 
+    setResults,
     }}
     >
       {children}
