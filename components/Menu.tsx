@@ -22,10 +22,14 @@ export default function Menu({
   const [simCount, setSimCount] = useState(0);
   const [range, setRange] = useState("1-");
 
-  // 🔥 NEW
   const [modeMap, setModeMap] = useState<Record<string, "all" | "review">>({});
 
+  // 🔥 NEW: loading state
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    setLoading(true);
+
     fetchQuestions().then(q => {
       setTotal(q.length);
       setRange(`1-${q.length}`);
@@ -35,6 +39,7 @@ export default function Menu({
       );
 
       setSimCount(sims.length);
+      setLoading(false);
     });
   }, []);
 
@@ -48,6 +53,18 @@ export default function Menu({
     }
 
     return total || 0;
+  }
+
+  // 🔥 LOADING SCREEN
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+          <div className="text-gray-600">Loading questions...</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -114,7 +131,7 @@ export default function Menu({
                     )}
                   </div>
 
-                  {/* 🔥 MODE SELECTOR */}
+                  {/* MODE SELECTOR */}
                   <div className="flex gap-3 text-xs">
                     <label className="flex gap-1">
                       <input
