@@ -57,13 +57,10 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
     }
   }, [questions]);
 
-  useEffect(() => {
-    if (initialState) {
-      setScore(initialState.score || 0);
-    } else {
-      setScore(0);
-    }
-  }, [initialState]);
+useEffect(() => {
+  // always reset score on load to avoid accumulation
+  setScore(0);
+}, [initialState]);
 
   if (!questions.length || !q) return <div>Loading...</div>;
 
