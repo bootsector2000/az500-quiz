@@ -38,7 +38,22 @@ export function renderRichText(text: string, images: Record<string, string>) {
             </div>
           );
         }
-        return <span key={index}>{part}</span>;
+        const subParts = part.split(/(_[^_]+_)/g);
+
+        return (
+          <span key={index}>
+            {subParts.map((sub, i) => {
+              if (sub.startsWith("_") && sub.endsWith("_")) {
+                return (
+                  <span key={i} className="underline">
+                    {sub.slice(1, -1)}
+                  </span>
+                );
+              }
+              return <span key={i}>{sub}</span>;
+            })}
+          </span>
+        );
       })}
     </div>
   );
