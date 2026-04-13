@@ -109,19 +109,36 @@ export default function Menu({
             <div className="font-semibold">Gespeicherte Tests:</div>
 
             {saves.map((s) => {
-              const max = getRangeCount(s.range, total);
+              const max = s.questionIds?.length ?? getRangeCount(s.range, total);
               const percent = max ? Math.round((s.score / max) * 100) : 0;
 
               const results = s.results || {};
+              const resultIds = Object.keys(results);
               const markedSet = new Set(s.marked || []);
 
+              const isValid = (id: string) =>
+                !s.questionIds || s.questionIds.includes(id);
+
+              // WRONG
               let wrong = 0;
-              for (const qid of Object.keys(results)) {
-                if (results[qid] === "wrong") wrong++;
+              for (const qid of resultIds) {
+                if (results[qid] === "wrong" && isValid(qid)) {
+                  wrong++;
+                }
               }
 
-              const unanswered = max - Object.keys(results).length;
-              const marked = markedSet.size;
+              // UNANSWERED
+              const validResultCount = resultIds.filter(isValid).length;
+              const unanswered = max - validResultCount;
+
+              // MARKED
+              const marked = [...markedSet].filter(isValid).length;
+
+              // 🔥 SKIPPED
+              const baseTotal = getRangeCount(s.range, total);
+              const skipped = s.questionIds
+                ? Math.max(baseTotal - s.questionIds.length, 0)
+                : 0;
 
               return (
                 <div key={s.id} className="border p-2 rounded space-y-2">
@@ -140,20 +157,20 @@ export default function Menu({
                         Score: {s.score} / {max} ({percent}%)
                       </span>
 
-                      {/* 🔥 ONE TOOLTIP */}
                       <span className="relative group cursor-default">
-                        m: {marked} | w: {wrong} | u: {unanswered}
+                        m: {marked} | w: {wrong} | u: {unanswered} | s: {skipped}
 
                         <span className="absolute hidden group-hover:block bottom-full mb-1 right-0 bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap leading-tight">
                           m: marked<br />
                           w: wrong<br />
-                          u: unanswered
+                          u: unanswered<br />
+                          s: skipped
                         </span>
                       </span>
                     </div>
                   </div>
 
-                  {/* MODE SELECTOR */}
+                  {/* MODE */}
                   <div className="flex gap-3 text-xs">
                     <label className="flex gap-1">
                       <input

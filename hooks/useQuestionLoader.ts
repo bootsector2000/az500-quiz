@@ -21,6 +21,15 @@ export function useQuestionLoader({
     fetchQuestions().then(allQuestions => {
       let q = [...allQuestions];
 
+      // 🔥 NEW: HARD OVERRIDE
+      if (initialState?.questionIds) {
+        const idSet = new Set(initialState.questionIds);
+        q = q.filter(q => idSet.has(q.id));
+
+        setQuestions(q);
+        return;
+      }
+
       // RANGE
       if (range) {
         const parts = range.split("-").map(n => parseInt(n.trim(), 10));

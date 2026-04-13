@@ -28,23 +28,10 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
   const [multiAnswers, setMultiAnswers] = useState<Record<string, string>>({});
   const [marked, setMarked] = useState<string[]>([]);
 
-  // 🔥 NEW: per-question state
-  const [questionStateMap, setQuestionStateMap] = useState<
-    Record<
-      string,
-      {
-        selected: string[];
-        ordered: string[];
-        yesNoAnswers: Record<string, string>;
-        multiAnswers: Record<string, string>;
-        checked: boolean;
-      }
-    >
-  >({});
+  const [questionStateMap, setQuestionStateMap] = useState<Record<string, any>>({});
 
   const q = questions[index];
 
-  // 🔥 persist current question state
   function persistCurrentState() {
     if (!q) return;
 
@@ -60,7 +47,6 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
     }));
   }
 
-  // 🔥 restore state
   function restoreState(questionId: string) {
     const saved = questionStateMap[questionId];
 
@@ -83,11 +69,8 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
     resetAnswerLock();
   }
 
-  // 🔥 restore on question change
   useEffect(() => {
-    if (q) {
-      restoreState(q.id);
-    }
+    if (q) restoreState(q.id);
   }, [index]);
 
   function next() {
@@ -173,6 +156,9 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
       marked,
       range,
       results,
+
+      // 🔥 KEY CHANGE
+      questionIds: questions.map(q => q.id),
     });
 
     window.location.reload();
