@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Question } from "@/lib/parseCsv";
 import { useQuiz } from "@/context/QuizContext";
 import { saveState } from "@/lib/storage";
@@ -28,30 +28,81 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
   const [multiAnswers, setMultiAnswers] = useState<Record<string, string>>({});
   const [marked, setMarked] = useState<string[]>([]);
 
+  // 🔥 NEW: per-question state
+  const [questionStateMap, setQuestionStateMap] = useState<
+    Record<
+      string,
+      {
+        selected: string[];
+        ordered: string[];
+        yesNoAnswers: Record<string, string>;
+        multiAnswers: Record<string, string>;
+        checked: boolean;
+      }
+    >
+  >({});
+
   const q = questions[index];
 
-  function resetState() {
-    setSelected([]);
-    setOrdered([]);
-    setYesNoAnswers({});
-    setMultiAnswers({});
-    setChecked(false);
+  // 🔥 persist current question state
+  function persistCurrentState() {
+    if (!q) return;
+
+    setQuestionStateMap(prev => ({
+      ...prev,
+      [q.id]: {
+        selected,
+        ordered,
+        yesNoAnswers,
+        multiAnswers,
+        checked,
+      },
+    }));
+  }
+
+  // 🔥 restore state
+  function restoreState(questionId: string) {
+    const saved = questionStateMap[questionId];
+
+    if (!saved) {
+      setSelected([]);
+      setOrdered([]);
+      setYesNoAnswers({});
+      setMultiAnswers({});
+      setChecked(false);
+      resetAnswerLock();
+      return;
+    }
+
+    setSelected(saved.selected);
+    setOrdered(saved.ordered);
+    setYesNoAnswers(saved.yesNoAnswers);
+    setMultiAnswers(saved.multiAnswers);
+    setChecked(saved.checked);
+
     resetAnswerLock();
   }
 
+  // 🔥 restore on question change
+  useEffect(() => {
+    if (q) {
+      restoreState(q.id);
+    }
+  }, [index]);
+
   function next() {
-    resetState();
+    persistCurrentState();
     setIndex(i => i + 1);
   }
 
   function previous() {
-    resetState();
+    persistCurrentState();
     setIndex(i => (i > 0 ? i - 1 : i));
   }
 
   function goToQuestion(num: number) {
     if (num < 1 || num > questions.length) return;
-    resetState();
+    persistCurrentState();
     setIndex(num - 1);
   }
 
@@ -110,6 +161,8 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
   }
 
   function saveAndExit() {
+    persistCurrentState();
+
     saveState({
       index,
       score,
