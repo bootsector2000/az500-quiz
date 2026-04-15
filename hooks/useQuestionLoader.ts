@@ -19,16 +19,34 @@ export function useQuestionLoader({
 
   useEffect(() => {
     fetchQuestions().then(allQuestions => {
-      let q = [...allQuestions];
 
-      // 🔥 NEW: HARD OVERRIDE
+      // 🔥 PATH 1: LOAD FROM SAVE (deterministic)
       if (initialState?.questionIds) {
         const idSet = new Set(initialState.questionIds);
-        q = q.filter(q => idSet.has(q.id));
+
+        let q = allQuestions.filter(q => idSet.has(q.id));
+
+        // 🔥 REVIEW MODE auf gespeichertes Set anwenden
+        if (reviewMode === "review") {
+          const results = initialState.results || {};
+          const marked = new Set(initialState.marked || []);
+
+          q = q.filter(question => {
+            const result = results[question.id];
+            const isWrong = result === "wrong";
+            const isUnanswered = !result;
+            const isMarked = marked.has(question.id);
+
+            return isWrong || isUnanswered || isMarked;
+          });
+        }
 
         setQuestions(q);
         return;
       }
+
+      // 🔥 PATH 2: NORMAL FLOW (unverändert)
+      let q = [...allQuestions];
 
       // RANGE
       if (range) {
@@ -47,7 +65,7 @@ export function useQuestionLoader({
         );
       }
 
-      // REVIEW MODE
+      // REVIEW MODE (nur für neuen Run relevant)
       if (reviewMode === "review" && initialState) {
         const results = initialState.results || {};
         const marked = new Set(initialState.marked || []);
