@@ -7,6 +7,7 @@ type Params = {
   skipSim?: boolean;
   reviewMode?: "all" | "review";
   initialState?: any;
+  caseOnly?: boolean; // 🔥 NEW
 };
 
 export function useQuestionLoader({
@@ -14,19 +15,19 @@ export function useQuestionLoader({
   skipSim,
   reviewMode,
   initialState,
+  caseOnly,
 }: Params) {
   const [questions, setQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
     fetchQuestions().then(allQuestions => {
 
-      // 🔥 PATH 1: LOAD FROM SAVE (deterministic)
+      // 🔥 PATH 1: LOAD FROM SAVE
       if (initialState?.questionIds) {
         const idSet = new Set(initialState.questionIds);
 
         let q = allQuestions.filter(q => idSet.has(q.id));
 
-        // 🔥 REVIEW MODE auf gespeichertes Set anwenden
         if (reviewMode === "review") {
           const results = initialState.results || {};
           const marked = new Set(initialState.marked || []);
@@ -45,8 +46,15 @@ export function useQuestionLoader({
         return;
       }
 
-      // 🔥 PATH 2: NORMAL FLOW (unverändert)
+      // 🔥 PATH 2: NORMAL FLOW
       let q = [...allQuestions];
+
+      // 🔥 CASE ONLY
+      if (caseOnly) {
+        q = q.filter(q =>
+          q.question.toUpperCase().includes("CASE STUDY -")
+        );
+      }
 
       // RANGE
       if (range) {
@@ -65,23 +73,9 @@ export function useQuestionLoader({
         );
       }
 
-      // REVIEW MODE (nur für neuen Run relevant)
-      if (reviewMode === "review" && initialState) {
-        const results = initialState.results || {};
-        const marked = new Set(initialState.marked || []);
-
-        q = q.filter(question => {
-          const result = results[question.id];
-          const isWrong = result === "wrong";
-          const isUnanswered = !result;
-          const isMarked = marked.has(question.id);
-          return isWrong || isUnanswered || isMarked;
-        });
-      }
-
       setQuestions(q);
     });
-  }, [range, skipSim, reviewMode, initialState]);
+  }, [range, skipSim, reviewMode, initialState, caseOnly]);
 
   return questions;
 }

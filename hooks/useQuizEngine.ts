@@ -143,27 +143,31 @@ export function useQuizEngine({ questions, range }: UseQuizEngineParams) {
     }));
   }
 
-  function saveAndExit() {
-    persistCurrentState();
+function saveAndExit() {
+  persistCurrentState();
 
-    saveState({
-      index,
-      score,
-      selected,
-      ordered,
-      yesNoAnswers,
-      multiAnswers,
-      marked,
-      range,
-      results,
+  saveState({
+    index,
+    score,
+    selected,
+    ordered,
+    yesNoAnswers,
+    multiAnswers,
+    marked,
+    range,
+    results,
 
-      // 🔥 KEY CHANGE
-      questionIds: questions.map(q => q.id),
-    });
+    questionIds: questions.map(q => q.id),
 
-    window.location.reload();
-  }
+    // 🔥 NEW (robust detection)
+    caseOnly: questions.length > 0 &&
+      questions.every(q =>
+        q.question.toUpperCase().includes("CASE STUDY -")
+      ),
+  });
 
+  window.location.reload();
+}
   return {
     q,
     index,

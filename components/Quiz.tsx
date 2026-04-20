@@ -13,14 +13,22 @@ type Props = {
   skipSim?: boolean;
   range?: string;
   reviewMode?: "all" | "review";
+  caseOnly?: boolean; // 🔥 NEW
 };
 
-export default function Quiz({ initialState, skipSim, range, reviewMode }: Props) {
+export default function Quiz({
+  initialState,
+  skipSim,
+  range,
+  reviewMode,
+  caseOnly,
+}: Props) {
   const questions = useQuestionLoader({
     range,
     skipSim,
     reviewMode,
     initialState,
+    caseOnly, // 🔥 NEW
   });
 
   const [jumpTo, setJumpTo] = useState("");
@@ -96,7 +104,6 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
     <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6">
 
-        {/* HEADER */}
         <QuizHeader
           index={index}
           total={questions.length}
@@ -104,7 +111,6 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
           score={score}
         />
 
-        {/* QUESTION */}
         <QuestionCard
           q={q}
           checked={checked}
@@ -121,12 +127,9 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
           checkAnswer={checkAnswer}
         />
 
-        {/* 🔹 Divider (immer sichtbar + softer) */}
         <div className="my-6 border-t border-gray-200" />
 
-        {/* 🔹 Navigation */}
         <div className="flex items-center justify-between gap-3">
-
           <button
             onClick={previous}
             disabled={index === 0}
@@ -137,7 +140,7 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
 
           <button
             onClick={saveAndExit}
-            className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-400 transition"
+            className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg"
           >
             Save & Exit
           </button>
@@ -150,17 +153,15 @@ export default function Quiz({ initialState, skipSim, range, reviewMode }: Props
               Next →
             </button>
           )}
-
         </div>
 
-        {/* 🔹 Go To Question (clean, no box) */}
         <div className="mt-6 flex gap-2 items-center">
           <input
             type="number"
             placeholder="Go to Question..."
             value={jumpTo}
             onChange={e => setJumpTo(e.target.value)}
-            className="flex-1 border px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border px-3 py-2 rounded-lg"
           />
 
           <button

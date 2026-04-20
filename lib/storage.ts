@@ -15,7 +15,9 @@ export type SavedState = {
   range?: string;
   results?: Record<string, "correct" | "wrong">;
 
-  questionIds?: string[]; // 🔥 NEW
+  questionIds?: string[];
+
+  caseOnly?: boolean; // 🔥 NEW
 };
 
 const KEY = "quiz_saves";

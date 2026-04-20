@@ -11,6 +11,7 @@ export default function Home() {
   const [saves, setSaves] = useState<SavedState[]>([]);
   const [activeSave, setActiveSave] = useState<SavedState | null>(null);
   const [skipSim, setSkipSim] = useState(false);
+  const [caseOnly, setCaseOnly] = useState(false); // 🔥 NEW
   const [range, setRange] = useState<string>("1-");
   const [reviewMode, setReviewMode] = useState<"all" | "review">("all");
 
@@ -22,21 +23,19 @@ export default function Home() {
     return (
       <Menu
         saves={saves}
-        onNew={(skip, r) => {
+        onNew={(skip, r, caseOnlyFlag) => {
           setSkipSim(skip);
           setRange(r);
+          setCaseOnly(!!caseOnlyFlag);
           setActiveSave(null);
           setMode("quiz");
         }}
-onLoad={(s, mode) => {
-  setActiveSave(s);
-  setReviewMode(mode);
-
-  // 🔥 DAS IST DER FIX
-  setRange(s.range || "1-");
-
-  setMode("quiz");
-}}
+        onLoad={(s, mode) => {
+          setActiveSave(s);
+          setReviewMode(mode);
+          setRange(s.range || "1-");
+          setMode("quiz");
+        }}
         onDelete={() => {
           setSaves(loadAllStates());
         }}
@@ -46,12 +45,13 @@ onLoad={(s, mode) => {
 
   return (
     <QuizProvider>
-    <Quiz
-      initialState={activeSave}
-      skipSim={skipSim}
-      range={range}
-      reviewMode={reviewMode}
-    />
+      <Quiz
+        initialState={activeSave}
+        skipSim={skipSim}
+        range={range}
+        reviewMode={reviewMode}
+        caseOnly={caseOnly} // 🔥 NEW
+      />
     </QuizProvider>
   );
 }
