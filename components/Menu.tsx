@@ -21,6 +21,7 @@ export default function Menu({
   const [skipSim, setSkipSim] = useState(false);
   const [caseOnly, setCaseOnly] = useState(false);
   const [simCount, setSimCount] = useState(0);
+  const [caseCount, setCaseCount] = useState(0); // 🔥 FIX
   const [range, setRange] = useState("1-");
 
   const [modeMap, setModeMap] = useState<Record<string, "all" | "review">>({});
@@ -38,7 +39,14 @@ export default function Menu({
         q.question.trim().toUpperCase().startsWith("SIMULATION")
       );
 
+      // 🔥 FIX: robust case detection
+      const cases = q.filter(q => {
+        const text = q.question.replace(/"/g, "").trim().toUpperCase();
+        return text.startsWith("CASE STUDY");
+      });
+
       setSimCount(sims.length);
+      setCaseCount(cases.length); // 🔥 FIX
       setLoading(false);
     });
   }, []);
@@ -55,7 +63,6 @@ export default function Menu({
     return total || 0;
   }
 
-  // 🔥 FIX: nur explizites Flag verwenden
   function isCaseStudySet(s: SavedState) {
     return s.caseOnly === true;
   }
@@ -73,188 +80,184 @@ export default function Menu({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 text-black">
-      <div className="bg-yellow-100 text-yellow-900 text-xs px-4 py-2 rounded-lg text-center border border-yellow-300">
-        Bugs, Questions, Feedback? Contact me:{" "}
-        <a
-          href="mailto:bootsector2000@gmail.com"
-          className="underline font-medium"
-        >
-          bootsector2000@gmail.com
-        </a>
-      </div>
-      <div className="bg-white p-6 rounded-2xl shadow-lg w-96 space-y-4 text-black">
+      <div className="w-96 flex flex-col gap-3">
 
-        {/* HEADER */}
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">AZ-500 Quiz</h2>
-          <div className="text-sm text-gray-600">{total} Questions</div>
+        {/* Banner */}
+        <div className="bg-yellow-100 text-yellow-900 text-xs px-4 py-2 rounded-lg text-center border border-yellow-300">
+          Bugs, Questions, Feedback? Contact me:{" "}
+          <a
+            href="mailto:bootsector2000@gmail.com"
+            className="underline font-medium"
+          >
+            bootsector2000@gmail.com
+          </a>
         </div>
 
-        {/* START */}
-        <button
-          onClick={() => onNew(skipSim, range, caseOnly)}
-          className="w-full bg-black text-white py-2 rounded-lg"
-        >
-          Neuer Versuch
-        </button>
+        <div className="bg-white p-6 rounded-2xl shadow-lg space-y-4 text-black">
 
-        {/* RANGE */}
-        <div className="flex flex-col gap-1 text-sm">
-          <label>Select questions</label>
-          <input
-            type="text"
-            value={range}
-            onChange={e => setRange(e.target.value)}
-            className="border p-2 rounded"
-          />
-        </div>
-
-        {/* SKIP SIM */}
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={skipSim}
-              onChange={(e) => setSkipSim(e.target.checked)}
-            />
-            Skip Simulation ({simCount})
-          </label>
-        </div>
-
-        {/* CASE ONLY */}
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={caseOnly}
-              onChange={(e) => setCaseOnly(e.target.checked)}
-            />
-            Case Studies Only
-          </label>
-        </div>
-
-        {/* SAVES */}
-        {saves.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <div className="font-semibold">Gespeicherte Tests:</div>
-
-            {saves.map((s) => {
-              const max = s.questionIds?.length ?? getRangeCount(s.range, total);
-              const percent = max ? Math.round((s.score / max) * 100) : 0;
-
-              const results = s.results || {};
-              const resultIds = Object.keys(results);
-              const markedSet = new Set(s.marked || []);
-
-              const isValid = (id: string) =>
-                !s.questionIds || s.questionIds.includes(id);
-
-              // WRONG
-              let wrong = 0;
-              for (const qid of resultIds) {
-                if (results[qid] === "wrong" && isValid(qid)) {
-                  wrong++;
-                }
-              }
-
-              // UNANSWERED
-              const validResultCount = resultIds.filter(isValid).length;
-              const unanswered = max - validResultCount;
-
-              // MARKED
-              const marked = [...markedSet].filter(isValid).length;
-
-              // SKIPPED
-              const baseTotal = getRangeCount(s.range, total);
-              const skipped = s.questionIds
-                ? Math.max(baseTotal - s.questionIds.length, 0)
-                : 0;
-
-              return (
-                <div key={s.id} className="border p-2 rounded space-y-2">
-
-                  <div>
-                    <div className="text-sm font-medium">{s.name}</div>
-
-                    <div className="text-xs text-gray-500">
-                      {isCaseStudySet(s)
-                        ? "Case Studies"
-                        : s.range
-                          ? `Questions ${s.range}`
-                          : ""}
-                    </div>
-
-                    <div className="text-xs text-gray-500 flex justify-between">
-                      <span>
-                        Score: {s.score} / {max} ({percent}%)
-                      </span>
-
-                      <span className="relative group cursor-default">
-                        m: {marked} | w: {wrong} | u: {unanswered} | s: {skipped}
-
-                        <span className="absolute hidden group-hover:block bottom-full mb-1 right-0 bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap leading-tight">
-                          m: marked<br />
-                          w: wrong<br />
-                          u: unanswered<br />
-                          s: skipped
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* MODE */}
-                  <div className="flex gap-3 text-xs">
-                    <label className="flex gap-1">
-                      <input
-                        type="radio"
-                        name={`mode-${s.id}`}
-                        checked={(modeMap[s.id] || "all") === "all"}
-                        onChange={() =>
-                          setModeMap(prev => ({ ...prev, [s.id]: "all" }))
-                        }
-                      />
-                      All
-                    </label>
-
-                    <label className="flex gap-1">
-                      <input
-                        type="radio"
-                        name={`mode-${s.id}`}
-                        checked={(modeMap[s.id] || "all") === "review"}
-                        onChange={() =>
-                          setModeMap(prev => ({ ...prev, [s.id]: "review" }))
-                        }
-                      />
-                      Review
-                    </label>
-                  </div>
-
-                  {/* ACTIONS */}
-                  <div className="flex justify-between">
-                    <button
-                      onClick={() => onLoad(s, modeMap[s.id] || "all")}
-                      className="bg-blue-600 text-white px-3 py-1 rounded"
-                    >
-                      Laden
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (!confirm("Delete save?")) return;
-                        deleteState(s.id);
-                        onDelete();
-                      }}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
-                    >
-                      X
-                    </button>
-                  </div>
-
-                </div>
-              );
-            })}
+          <div className="text-center">
+            <h2 className="text-xl font-semibold">AZ-500 Quiz</h2>
+            <div className="text-sm text-gray-600">{total} Questions</div>
           </div>
-        )}
+
+          <button
+            onClick={() => onNew(skipSim, range, caseOnly)}
+            className="w-full bg-black text-white py-2 rounded-lg"
+          >
+            Neuer Versuch
+          </button>
+
+          {/* RANGE */}
+          <div className="flex flex-col gap-1 text-sm">
+            <label>Select questions</label>
+            <input
+              type="text"
+              value={range}
+              onChange={e => setRange(e.target.value)}
+              className="border p-2 rounded"
+            />
+          </div>
+
+          {/* SKIP SIM */}
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={skipSim}
+                onChange={(e) => setSkipSim(e.target.checked)}
+              />
+              Skip Simulation ({simCount})
+            </label>
+          </div>
+
+          {/* 🔥 CASE ONLY FIXED */}
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={caseOnly}
+                onChange={(e) => setCaseOnly(e.target.checked)}
+              />
+              Case Studies Only ({caseCount})
+            </label>
+          </div>
+
+          {/* SAVES */}
+          {saves.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <div className="font-semibold">Gespeicherte Tests:</div>
+
+              {saves.map((s) => {
+                const max = s.questionIds?.length ?? getRangeCount(s.range, total);
+                const percent = max ? Math.round((s.score / max) * 100) : 0;
+
+                const results = s.results || {};
+                const resultIds = Object.keys(results);
+                const markedSet = new Set(s.marked || []);
+
+                const isValid = (id: string) =>
+                  !s.questionIds || s.questionIds.includes(id);
+
+                let wrong = 0;
+                for (const qid of resultIds) {
+                  if (results[qid] === "wrong" && isValid(qid)) {
+                    wrong++;
+                  }
+                }
+
+                const validResultCount = resultIds.filter(isValid).length;
+                const unanswered = max - validResultCount;
+                const marked = [...markedSet].filter(isValid).length;
+
+                const baseTotal = getRangeCount(s.range, total);
+                const skipped = s.questionIds
+                  ? Math.max(baseTotal - s.questionIds.length, 0)
+                  : 0;
+
+                return (
+                  <div key={s.id} className="border p-2 rounded space-y-2">
+
+                    <div>
+                      <div className="text-sm font-medium">{s.name}</div>
+
+                      <div className="text-xs text-gray-500">
+                        {isCaseStudySet(s)
+                          ? "Case Studies"
+                          : s.range
+                            ? `Questions ${s.range}`
+                            : ""}
+                      </div>
+
+                      <div className="text-xs text-gray-500 flex justify-between">
+                        <span>
+                          Score: {s.score} / {max} ({percent}%)
+                        </span>
+
+                        <span className="relative group cursor-default">
+                          m: {marked} | w: {wrong} | u: {unanswered} | s: {skipped}
+
+                          <span className="absolute hidden group-hover:block bottom-full mb-1 right-0 bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap leading-tight">
+                            m: marked<br />
+                            w: wrong<br />
+                            u: unanswered<br />
+                            s: skipped
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 text-xs">
+                      <label className="flex gap-1">
+                        <input
+                          type="radio"
+                          name={`mode-${s.id}`}
+                          checked={(modeMap[s.id] || "all") === "all"}
+                          onChange={() =>
+                            setModeMap(prev => ({ ...prev, [s.id]: "all" }))
+                          }
+                        />
+                        All
+                      </label>
+
+                      <label className="flex gap-1">
+                        <input
+                          type="radio"
+                          name={`mode-${s.id}`}
+                          checked={(modeMap[s.id] || "all") === "review"}
+                          onChange={() =>
+                            setModeMap(prev => ({ ...prev, [s.id]: "review" }))
+                          }
+                        />
+                        Review
+                      </label>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <button
+                        onClick={() => onLoad(s, modeMap[s.id] || "all")}
+                        className="bg-blue-600 text-white px-3 py-1 rounded"
+                      >
+                        Laden
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (!confirm("Delete save?")) return;
+                          deleteState(s.id);
+                          onDelete();
+                        }}
+                        className="bg-red-500 text-white px-3 py-1 rounded"
+                      >
+                        X
+                      </button>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
