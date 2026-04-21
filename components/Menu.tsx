@@ -73,6 +73,15 @@ export default function Menu({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 text-black">
+      <div className="bg-yellow-100 text-yellow-900 text-xs px-4 py-2 rounded-lg text-center border border-yellow-300">
+        Bugs, Questions, Feedback? Contact me:{" "}
+        <a
+          href="mailto:bootsector2000@gmail.com"
+          className="underline font-medium"
+        >
+          bootsector2000@gmail.com
+        </a>
+      </div>
       <div className="bg-white p-6 rounded-2xl shadow-lg w-96 space-y-4 text-black">
 
         {/* HEADER */}
