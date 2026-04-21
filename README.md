@@ -12,7 +12,7 @@ Interactive quiz application for AZ-500 exam preparation.
 
 ### 🏠 Menu
 
-![Menu](./public/showcase/menu.png)
+<img width="407" height="662" alt="grafik" src="https://github.com/user-attachments/assets/8ea66cc3-1cf3-4c4a-b93d-181622fc548e" />
 
 ### ❓ Quiz
 ![Quiz1](./public/showcase/questionCard1.png)
